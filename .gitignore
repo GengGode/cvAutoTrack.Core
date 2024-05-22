@@ -1,6 +1,5 @@
 .vscode/
 build/
-
 CMakeUserPresets.json
 tests/csharp/.vs/
 tests/csharp/bin/
