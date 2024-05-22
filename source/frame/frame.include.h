@@ -1,11 +1,10 @@
 #pragma once
 
-#include <windows.h>
+#include <Windows.h>
 
 #include <opencv2/core.hpp>
 
 #include <logger.include.h>
-
 
 namespace tianli::frame
 {
@@ -37,6 +36,7 @@ namespace tianli::frame
 
     public:
         static std::shared_ptr<frame_source> create(source_type type, std::shared_ptr<logger::logger_interface> logger = nullptr);
+
     public:
         frame_source(std::shared_ptr<logger::logger_interface> logger = nullptr) : logger(logger)
         {
@@ -48,7 +48,7 @@ namespace tianli::frame
         virtual ~frame_source() = default;
         virtual bool initialization() { return false; }
         virtual bool uninitialized() { return false; }
-        virtual bool get_frame(cv::Mat& frame) = 0;
+        virtual bool get_frame(cv::Mat &frame) = 0;
         virtual bool set_capture_handle(HWND handle) = 0;
         virtual bool set_local_frame(cv::Mat frame) = 0;
         virtual bool set_local_file(std::string file) = 0;
