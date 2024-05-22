@@ -2,3 +2,8 @@
 build/
 
 CMakeUserPresets.json
+tests/csharp/.vs/
+tests/csharp/bin/
+tests/csharp/obj/
+tests/csharp/cvAutoTrack.Core.dll
+tests/csharp/cvAutoTrack.Core.Native.cs
