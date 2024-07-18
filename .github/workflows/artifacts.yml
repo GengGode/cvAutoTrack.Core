@@ -36,4 +36,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ runner.os }}-${{ env.BUILD_TYPE }}
-        path: build/${{ env.BUILD_TYPE }}
+        path: build/bin
