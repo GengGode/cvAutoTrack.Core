@@ -16,6 +16,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: setup-vsdevenv
+      uses: seanmiddleditch/gha-setup-vsdevenv@master
+
     - name: run-vcpkg
       uses: lukka/run-vcpkg@v11
       with:
