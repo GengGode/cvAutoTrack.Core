@@ -1,42 +1,76 @@
 #include <cvAutoTrack.Core.h>
+#include <global.error.h>
+
+#include "core.impl.h"
 
 #include <map>
 #include <string>
 
-static std::map<std::string, callback_t> g_callbacks;
+// static std::map<std::string, callback_t> g_callbacks;
+error_infos_ptr create_error_infos()
+{
+    auto error_infos = new cvAutoTrackErrorInfos();
+    error_infos->impl = new cvAutoTrackErrorInfosImpl();
+    error_infos->destroy = [](error_infos_ptr error_infos)
+    {
+        delete error_infos->impl;
+        delete error_infos;
+    };
+
+    error_infos->set_infos_encoding = [](error_infos_ptr error_infos, in_string_ptr encoding)
+    {
+        return error_infos->impl->switch_encoding(encoding);
+    };
+    error_infos->get_infos_encoding = [](error_infos_ptr error_infos, out_string_ptr encoding, int size)
+    { 
+        if (error_infos->impl->current_encoding.size() > size)
+            return deferr("缓冲区大小不足");
+        std::copy_n(error_infos->impl->current_encoding.c_str(), error_infos->impl->current_encoding.size(), encoding);
+        return 0;
+        
+    };
+    error_infos->get_info = [](error_infos_ptr error_infos, int index, out_string_ptr info, int size)
+    { 
+        if (index >= tianli::global::error_invoker::locations.size())
+            return deferr("不存在的错误码编号");
+        auto &location = tianli::global::error_invoker::locations[index];
+        std::string error_msg = error_infos->impl->current_convector(location.error_msg);
+        if (error_msg.size() > size)
+            return deferr("缓冲区大小不足");
+        std::copy_n(error_msg.c_str(), error_msg.size(), info);
+        return 0;
+    };
+    error_infos->get_info_raw = [](error_infos_ptr error_infos, int index, out_string_ptr info, int size)
+    {
+        if (index >= tianli::global::error_invoker::locations.size())
+            return deferr("不存在的错误码编号");
+        auto &location = tianli::global::error_invoker::locations[index];
+        if (location.error_msg.size() > size)
+            return deferr("缓冲区大小不足");
+        std::copy_n(location.error_msg.c_str(), location.error_msg.size(), info);
+        return 0;
+    };  
+    error_infos->get_info_count = [](int *count)
+    {
+        *count = tianli::global::error_invoker::locations.size();
+        return 0;
+    };
+    return error_infos;
+}
 
 core_ptr CreateInstance()
 {
     auto core = new cvAutoTrackCore();
     core->destroy = [](core_ptr core)
     { delete core; };
-    core->init = []()
-    { return 0; };
-    core->release = []()
-    { return 0; };
-    core->start = []()
-    { return 0; };
-    core->stop = []()
-    { return 0; };
-    core->setConfig = [](in_string_ptr key, in_string_ptr value)
-    { return 0; };
-    core->getConfig = [](in_string_ptr key, out_string_ptr value, int size)
-    { return 0; };
-    core->setCallback = [](in_string_ptr callback_key, callback_t callback, void *user_data)
-    { g_callbacks[callback_key] = callback; return 0; };
-    core->removeCallback = [](in_string_ptr callback_key)
-    { 
-        auto it = g_callbacks.find(callback_key);
-        if (it != g_callbacks.end())
-            g_callbacks.erase(it);
-        return 0;
-    };
-    core->call = [](in_string_ptr callback_key, in_string_ptr key, in_string_ptr value, void *user_data)
-    { 
-        auto it = g_callbacks.find(callback_key);
-        if (it != g_callbacks.end())
-            it->second(key, value, user_data);
-        return 0;
-    };
+    core->sync_call = [](in_string_ptr member_key, void *user_data)
+    { return deferr("未定义"); };
+    core->async_call = [](in_string_ptr member_key, void *user_data, unsigned int *request_id)
+    { return deferr("未定义"); };
+    core->get_request_status = [](unsigned int request_id, int *status)
+    { return deferr("未定义"); };
+    core->create_error_infos = []()
+    { return create_error_infos(); };
+    
     return core;
 }

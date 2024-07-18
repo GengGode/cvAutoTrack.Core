@@ -7,11 +7,11 @@ set(library_target_name cvAutoTrack.Core)
 # utf8
 target_compile_options(${library_target_name} PRIVATE /utf-8)
 # use c++17
-target_compile_options(${library_target_name} PRIVATE /std:c++17)
-target_compile_definitions(${library_target_name} PUBLIC CVAUTOTRACK_CORE_EXPORTS)
+target_compile_options(${library_target_name} PRIVATE /std:c++20)
+target_compile_definitions(${library_target_name} PRIVATE CVAUTOTRACK_CORE_EXPORTS)
 
 target_include_directories(${library_target_name} PUBLIC ${include_dir})
-target_include_directories(${library_target_name} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(${library_target_name} PRIVATE ${source_dir})
 
 target_sources(${library_target_name} PRIVATE core.inface.cpp)
 

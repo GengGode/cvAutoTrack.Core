@@ -1,6 +1,4 @@
 #pragma once
-#include "algorithms/filter/filter.include.h"
-#include "frame/frame.include.h"
 #include <list>
 #include <memory>
 #include <opencv2/core.hpp>
@@ -8,31 +6,21 @@
 
 #include <Windows.h>
 
+namespace tianli
+{
+namespace frame
+{
+    class frame_source;
+}
+namespace algorithms::filter
+{
+    class filter;
+}
+}
 namespace tianli::global
 {
-
-    struct direction_calculation_config
-    {
-        bool error = false;
-        error_info err;
-    };
-
-    struct rotation_calculation_config
-    {
-        bool error = false;
-        error_info err;
-    };
-
-    struct position_calculation_config
-    {
-        bool error = false;
-        error_info err;
-    };
-
     struct odometer_config
     {
-        bool error = false;
-        error_info err;
         double scale = 1.0;
     };
 
@@ -40,12 +28,10 @@ namespace tianli::global
     {
         bool is_on_city = false;
         bool error = false;
-        error_info err;
     };
     struct uid_calculation_config
     {
         bool error = false;
-        error_info err;
     };
 
     enum GenshinWindowClass
