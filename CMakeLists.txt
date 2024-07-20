@@ -15,6 +15,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
+# set global setting
+#----------------------------------------------------
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+Set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "cmake_targets")
+
 add_subdirectory(source)
 
 add_subdirectory(tests/c)
