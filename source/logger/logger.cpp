@@ -1,9 +1,9 @@
 #include "logger.include.h"
 #include "record/record.stdlog.h"
 
-namespace tianli::logger
+namespace tianli::global
 {
-    std::shared_ptr<logger_interface> create(logger_interface::log_type type)
+    std::shared_ptr<logger_interface> create_logger(logger_interface::log_type type)
     {
         switch (type)
         {

@@ -6,7 +6,7 @@
 #include <chrono>
 #include <string>
 
-namespace tianli::logger::record
+namespace tianli::global::record
 {
     class std_logger : public logger_interface
     {

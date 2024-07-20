@@ -5,7 +5,7 @@
 #include <string>
 #include <utility>
 
-namespace tianli::logger
+namespace tianli::global
 {
     class error_type
     {
@@ -57,8 +57,6 @@ namespace tianli::logger
             database
         };
     public:
-        static std::shared_ptr<logger_interface> create(log_type type);
-    public:
         logger_interface() = default;
         virtual void write(level lv, const char* msg) = 0;
         virtual void log(error_type error) = 0;
@@ -67,4 +65,5 @@ namespace tianli::logger
         virtual void perl_end(std::string perl_label) = 0;
     };
 
+    std::shared_ptr<logger_interface> create_logger(logger_interface::log_type type = logger_interface::log_type::console);
 } // namespace tianli::global
