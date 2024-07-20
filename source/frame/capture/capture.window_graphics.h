@@ -12,7 +12,7 @@ namespace tianli::frame::capture
         winrt::Windows::Graphics::Capture::GraphicsCaptureItem m_item{ nullptr };
         winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool m_framePool{ nullptr };
         winrt::Windows::Graphics::Capture::GraphicsCaptureSession m_session{ nullptr };
-        winrt::Windows::Graphics::SizeInt32 m_lastSize;
+        winrt::Windows::Graphics::SizeInt32 m_lastSize{ };
         winrt::com_ptr<IDXGISwapChain1> m_swapChain{ nullptr };
 
     public:

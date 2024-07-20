@@ -67,13 +67,13 @@ namespace tianli::frame::capture
         auto pitch = mappedTex.RowPitch;
         if (data == nullptr)
             return false;
-
-        frame = cv::Mat(frame_size.Height, frame_size.Width, CV_8UC4, data, pitch);
+        if(this->source_frame.cols != frame_size.Width || this->source_frame.rows != frame_size.Height)
+            this->source_frame = cv::Mat(frame_size.Height, frame_size.Width, CV_8UC4, data, pitch);
         if (client_box_available)
         {
             if (client_box.right - client_box.left > frame_size.Width || client_box.bottom - client_box.top > frame_size.Height)
                 return false;
-            this->source_frame = frame(cv::Rect(0, 0, client_box.right - client_box.left, client_box.bottom - client_box.top));
+            this->source_frame = this->source_frame(cv::Rect(0, 0, client_box.right - client_box.left, client_box.bottom - client_box.top));
         }
         // 释放资源
         bufferTexture->Release();
