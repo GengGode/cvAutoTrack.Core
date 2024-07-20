@@ -1,5 +1,5 @@
 #pragma once
-#include "capture.include.h"
+#include "../frame.include.h"
 #include "utils/utils.window_scale.h"
 
 namespace tianli::frame::capture
@@ -7,7 +7,7 @@ namespace tianli::frame::capture
     class capture_bitblt : public capture_source
     {
     public:
-        capture_bitblt(std::shared_ptr<logger::logger_interface> logger = nullptr) : capture_source(logger) { this->type = source_type::bitblt; }
+        capture_bitblt(std::shared_ptr<global::logger_interface> logger = nullptr) : capture_source(logger) { this->type = source_type::bitblt; }
         ~capture_bitblt() override = default;
 
     public:

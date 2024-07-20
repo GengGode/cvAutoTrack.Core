@@ -1,5 +1,5 @@
 #pragma once
-#include "capture.include.h"
+#include "../frame.include.h"
 #include "utils/utils.window_graphics.h"
 #include "utils/utils.window_scale.h"
 
@@ -16,7 +16,7 @@ namespace tianli::frame::capture
         winrt::com_ptr<IDXGISwapChain1> m_swapChain{ nullptr };
 
     public:
-        capture_window_graphics(std::shared_ptr<logger::logger_interface> logger = nullptr) : capture_source(logger)
+        capture_window_graphics(std::shared_ptr<global::logger_interface> logger = nullptr) : capture_source(logger)
         {
             this->type = source_type::window_graphics;
             auto init_global = utils::window_graphics::graphics_global::get_instance();

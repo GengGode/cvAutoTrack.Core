@@ -1,6 +1,5 @@
 #pragma once
-#include "local.include.h"
-
+#include "../frame.include.h"
 #include <filesystem>
 #include <opencv2/videoio.hpp>
 
@@ -9,7 +8,7 @@ namespace tianli::frame::local
     class local_video : public local_source
     {
     public:
-        local_video(std::shared_ptr<logger::logger_interface> logger = nullptr) : local_source(logger) { this->type = source_type::video; }
+        local_video(std::shared_ptr<global::logger_interface> logger = nullptr) : local_source(logger) { this->type = source_type::video; }
         ~local_video() override = default;
 
     public:

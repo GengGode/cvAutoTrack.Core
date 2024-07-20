@@ -1,8 +1,6 @@
 #pragma once
-#include "local.include.h"
-
+#include "../frame.include.h"
 #include <filesystem>
-
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 
@@ -11,7 +9,7 @@ namespace tianli::frame::local
     class local_picture : public local_source
     {
     public:
-        local_picture(std::shared_ptr<logger::logger_interface> logger = nullptr) : local_source(logger) { this->type = source_type::picture; }
+        local_picture(std::shared_ptr<global::logger_interface> logger = nullptr) : local_source(logger) { this->type = source_type::picture; }
         ~local_picture() override = default;
 
     public:

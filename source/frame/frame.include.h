@@ -8,6 +8,7 @@
 
 namespace tianli::frame
 {
+    class logger_interface;
     class frame_source
     {
     public:
@@ -24,37 +25,51 @@ namespace tianli::frame
             handle,
             frame
         };
-
     public:
         source_type type = source_type::unknown;
         source_mode mode = source_mode::handle;
-        std::shared_ptr<logger::logger_interface> logger;
+        std::shared_ptr<global::logger_interface> logger;
         bool is_initialized = false;
         bool is_callback = false;
-        bool has_frame_rect_callback = false;
-        std::function<cv::Rect(cv::Rect)> frame_rect_callback;
-
     public:
-        static std::shared_ptr<frame_source> create(source_type type, std::shared_ptr<logger::logger_interface> logger = nullptr);
-
-    public:
-        frame_source(std::shared_ptr<logger::logger_interface> logger = nullptr) : logger(logger)
-        {
-            if (logger == nullptr)
-            {
-                this->logger = logger::logger_interface::create(logger::logger_interface::log_type::console);
-            }
-        }
+        frame_source(std::shared_ptr<global::logger_interface> logger = nullptr);
         virtual ~frame_source() = default;
         virtual bool initialization() { return false; }
         virtual bool uninitialized() { return false; }
-        virtual bool get_frame(cv::Mat &frame) = 0;
-        virtual bool set_capture_handle(HWND handle) = 0;
+        virtual bool get_frame(cv::Mat& frame) = 0;
+        virtual std::shared_ptr<time_frame> get_time_frame() { return nullptr; }
+    };
+
+    class local_source : public frame_source
+    {
+    public:
+        local_source(std::shared_ptr<global::logger_interface> logger = nullptr) : frame_source(logger) { this->mode = source_mode::frame; }
+        ~local_source() override = default;
+
         virtual bool set_local_frame(cv::Mat frame) = 0;
         virtual bool set_local_file(std::string file) = 0;
-        virtual bool set_source_handle_callback(std::function<HWND()> callback) = 0;
         virtual bool set_source_frame_callback(std::function<cv::Mat()> callback) = 0;
-        virtual bool set_frame_rect_callback(std::function<cv::Rect(cv::Rect)> callback) = 0;
+    protected:
+        std::function<cv::Mat()> source_frame_callback;
+        std::string source_local;
+        cv::Mat source_frame;
+    };   
+
+    class capture_source : public frame_source
+    {
+    public:
+        capture_source(std::shared_ptr<global::logger_interface> logger = nullptr) : frame_source(logger) { this->mode = source_mode::handle; }
+        ~capture_source() override = default;
+
+        virtual bool set_capture_handle(HWND handle) = 0;
+        virtual bool set_source_handle_callback(std::function<HWND()> callback) = 0;
+    protected:
+        std::function<HWND()> source_handle_callback;
+        HWND source_handle = nullptr;
+        cv::Mat source_frame;
     };
+
+    std::shared_ptr<local_source> create_local_source(frame_source::source_type type, std::shared_ptr<global::logger_interface> logger = nullptr);
+    std::shared_ptr<capture_source> create_capture_source(frame_source::source_type type, std::shared_ptr<global::logger_interface> logger = nullptr);
 
 } // namespace tianli::frame
