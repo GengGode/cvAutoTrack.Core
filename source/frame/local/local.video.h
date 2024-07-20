@@ -8,7 +8,7 @@ namespace tianli::frame::local
     class local_video : public local_source
     {
     public:
-        local_video(std::shared_ptr<global::logger_interface> logger = nullptr) : local_source(logger) { this->type = source_type::video; }
+        local_video() { this->type = source_type::video; }
         ~local_video() override = default;
 
     public:

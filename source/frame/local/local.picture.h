@@ -9,7 +9,7 @@ namespace tianli::frame::local
     class local_picture : public local_source
     {
     public:
-        local_picture(std::shared_ptr<global::logger_interface> logger = nullptr) : local_source(logger) { this->type = source_type::picture; }
+        local_picture() { this->type = source_type::picture; }
         ~local_picture() override = default;
 
     public:

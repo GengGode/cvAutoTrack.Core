@@ -4,38 +4,28 @@
 #include "local/local.picture.h"
 #include "local/local.video.h"
 
-#include <logger.include.h>
-
 namespace tianli::frame
 {
-    frame_source::frame_source(std::shared_ptr<global::logger_interface> logger): logger(logger)
-    {
-        if (logger == nullptr)
-        {
-            this->logger = tianli::global::create_logger();//std::make_shared<global::logger_interface>();
-        }
-    }
-
-    std::shared_ptr<local_source> create_local_source(frame_source::source_type type, std::shared_ptr<global::logger_interface> logger)
+    std::shared_ptr<local_source> create_local_source(frame_source::source_type type)
     {
         switch (type)
         {
         case frame_source::source_type::video:
-            return std::make_shared<local::local_video>(logger);
+            return std::make_shared<local::local_video>();
         case frame_source::source_type::picture: 
-            return std::make_shared<local::local_picture>(logger);
+            return std::make_shared<local::local_picture>();
         default:
             return nullptr;
         }
     }    
-    std::shared_ptr<capture_source> create_capture_source(frame_source::source_type type, std::shared_ptr<global::logger_interface> logger)
+    std::shared_ptr<capture_source> create_capture_source(frame_source::source_type type)
     {
         switch (type)
         {
         case frame_source::source_type::bitblt:
-            return std::make_shared<capture::capture_bitblt>(logger);
+            return std::make_shared<capture::capture_bitblt>();
         case frame_source::source_type::window_graphics:
-            return std::make_shared<capture::capture_window_graphics>(logger);
+            return std::make_shared<capture::capture_window_graphics>();
         default:
             return nullptr;
         }
