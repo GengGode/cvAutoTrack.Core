@@ -84,4 +84,20 @@ namespace tianli::global
         else
             return string;
     }
+    
+    static std::wstring string_to_wstring(const std::string& string) {
+        int wchar_count = MultiByteToWideChar(CP_UTF8, 0, string.c_str(), -1, nullptr, 0);
+        std::wstring ret_string(wchar_count - 1, L'\0');
+        MultiByteToWideChar(CP_UTF8, 0, string.c_str(), -1, &ret_string[0], wchar_count);
+        return ret_string;
+    }
+
+    static std::shared_ptr<wchar_t[]> to_shared_wstring(const std::wstring string)
+    {
+        auto size  = string.size();
+        auto ret_string = std::make_shared<wchar_t[]>(size + 1);
+        std::copy(string.begin(), string.end(), ret_string.get());
+        ret_string.get()[size] = L'\0';
+        return ret_string;
+    }
 } // namespace tianli::global
