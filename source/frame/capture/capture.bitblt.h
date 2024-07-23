@@ -7,31 +7,48 @@ namespace tianli::frame::capture
     class capture_bitblt : public capture_source
     {
     public:
-        capture_bitblt() { this->type = source_type::bitblt; }
+        capture_bitblt() { type = source_type::bitblt; }
         ~capture_bitblt() override = default;
 
     public:
         bool initialization() override
         {
-            if (this->is_callback)
-                this->source_handle = this->source_handle_callback();
-            if (IsWindow(this->source_handle) == false)
+            if (is_callback)
+                source_handle = source_handle_callback();
+            if (IsWindow(source_handle) == false)
                 return false;
+            screen_scale = utils::window_scale::get_screen_scale(source_handle);
+            if (GetWindowRect(source_handle, &rect) == false)
+                return false;
+            if (GetClientRect(source_handle, &client_rect) == false)
+                return false;
+            client_size = { (int)std::round(screen_scale * (client_rect.right - client_rect.left)), (int)std::round(screen_scale * (client_rect.bottom - client_rect.top)) };
+
+            screen = GetDC(source_handle);//CreateDCA("DISPLAY", NULL, NULL, NULL);
+            compdc = CreateCompatibleDC(screen);
+            bitmap = CreateCompatibleBitmap(screen, client_size.width, client_size.height);
+            SelectObject(compdc, bitmap);
+
             return true;
         }
-        bool uninitialized() override { return true; }
+        bool uninitialized() override 
+        {
+            DeleteObject(bitmap);
+            DeleteDC(compdc);
+            ReleaseDC(source_handle, screen);
+            return true; 
+        }
         bool set_capture_handle(HWND handle = 0) override
         {
             if (handle == nullptr)
                 return false;
-            if (handle == this->source_handle)
+            if (handle == source_handle)
                 return true;
             if (uninitialized() == false)
                 return false;
-            this->source_handle = handle;
+            source_handle = handle;
             if (initialization() == false)
                 return false;
-            this->is_callback = false;
             return true;
         }
         bool set_source_handle_callback(std::function<HWND()> callback) override
@@ -40,56 +57,38 @@ namespace tianli::frame::capture
                 return false;
             if (uninitialized() == false)
                 return false;
-            this->source_handle_callback = callback;
+            source_handle_callback = callback;
+            is_callback = true;
             if (initialization() == false)
                 return false;
-            this->is_callback = true;
             return true;
         }
         bool get_frame(cv::Mat& frame) override
         {
-            auto handle = this->source_handle;
-            if (this->is_callback)
-                handle = this->source_handle_callback();
-            if (handle == nullptr)
+            if (source_frame.cols != client_size.width || source_frame.rows != client_size.height)
+                source_frame.create(client_size, CV_MAKETYPE(CV_8U, 4));
+
+            BitBlt(compdc, 0, 0, client_size.width, client_size.height, screen, 0, 0, SRCCOPY);
+            GetBitmapBits(bitmap, client_size.width * client_size.height * 4, source_frame.data);
+
+            if (client_rect.left!=0 || client_rect.top!=0 || client_size.width != client_size.width || client_size.height!= client_size.width)
+                source_frame = source_frame(cv::Rect(client_rect.left, client_rect.top, client_size.width, client_size.height));
+            if (source_frame.empty())
                 return false;
-            if (IsWindow(handle) == false)
+            if (source_frame.cols < 480 || source_frame.rows < 360)
                 return false;
-            RECT rect = { 0, 0, 0, 0 };
-            if (GetWindowRect(handle, &rect) == false)
-                return false;
-            RECT client_rect = { 0, 0, 0, 0 };
-            if (GetClientRect(handle, &client_rect) == false)
-                return false;
-            double screen_scale = utils::window_scale::get_screen_scale(handle);
-            cv::Size client_size = { 0, 0 };
-            client_size.width = (int)(screen_scale * (client_rect.right - client_rect.left));
-            client_size.height = (int)(screen_scale * (client_rect.bottom - client_rect.top));
-            HDC hdc = GetDC(handle);
-            HDC hmemdc = CreateCompatibleDC(hdc);
-            HBITMAP hbitmap = CreateCompatibleBitmap(hdc, client_size.width, client_size.height);
-            SelectObject(hmemdc, hbitmap);
-            BitBlt(hmemdc, 0, 0, client_size.width, client_size.height, hdc, 0, 0, SRCCOPY);
-            DeleteDC(hmemdc);
-            ReleaseDC(handle, hdc);
-            BITMAP source_bitmap;
-            GetObject(hbitmap, sizeof(BITMAP), &source_bitmap);
-            int nChannels = source_bitmap.bmBitsPixel == 1 ? 1 : source_bitmap.bmBitsPixel / 8;
-            this->source_frame.create(cv::Size(source_bitmap.bmWidth, source_bitmap.bmHeight), CV_MAKETYPE(CV_8U, nChannels));
-            GetBitmapBits(hbitmap, source_bitmap.bmHeight * source_bitmap.bmWidth * nChannels, this->source_frame.data);
-            this->source_frame = this->source_frame(cv::Rect(client_rect.left, client_rect.top, client_size.width, client_size.height));
-            if (this->source_frame.empty())
-                return false;
-            if (this->source_frame.cols < 480 || this->source_frame.rows < 360)
-                return false;
-            frame = this->source_frame;
+            frame = source_frame;
             return true;
         }
 
     private:
-        RECT source_rect = { 0, 0, 0, 0 };
-        RECT source_client_rect = { 0, 0, 0, 0 };
-        cv::Size source_client_size;
+        RECT rect = { 0, 0, 0, 0 };
+        RECT client_rect = { 0, 0, 0, 0 };
+        HDC screen = nullptr;
+        HDC compdc = nullptr;
+        HBITMAP bitmap = nullptr;
+        double screen_scale = 1.0;
+        cv::Size client_size;
     };
 
 } // namespace tianli::frame::capture
