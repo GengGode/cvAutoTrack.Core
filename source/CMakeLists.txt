@@ -1,5 +1,5 @@
 
-
+add_subdirectory(genshin)
 add_subdirectory(logger)
 add_subdirectory(frame)
 add_subdirectory(core)
