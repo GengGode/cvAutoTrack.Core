@@ -5,6 +5,9 @@
 #include "comments/image_inspect_pool.hpp"
 
 class tracker_context;
+namespace tianli::genshin{
+    class genshin_handle;
+}
 
 class debugger : public imapp
 {
@@ -23,6 +26,7 @@ public:
     ImPlotContext* plot_ctx =nullptr;
     image_inspect_pool inspect_pool;
     std::shared_ptr<tracker_context> ctx;
+    std::shared_ptr<tianli::genshin::genshin_handle> genshin;
 };
 
 #include <chrono>

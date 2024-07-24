@@ -1,4 +1,5 @@
 #include "debugger.hpp"
+#include <global.genshin.h>
 
 #include <opencv2/imgproc.hpp>
 
@@ -52,6 +53,8 @@ void debugger::init(ImGuiIO& io) {
             return bind_texture(mat, texture_id, mat.channels()!=4);
         return rebind_texture(mat, texture_id, mat.channels()!=4);
     };
+
+    genshin = tianli::genshin::create_genshin_handle(tianli::genshin::genshin_handle::hanlde_type::official);
 }
 void debugger::next_frame(ImGuiIO& io){
     inspect_pool.bind_texture();
