@@ -1,3 +1,6 @@
+find_package(OpenCV REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(glew REQUIRED)
 
 add_subdirectory(genshin)
 add_subdirectory(logger)

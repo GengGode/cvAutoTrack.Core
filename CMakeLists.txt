@@ -20,6 +20,13 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 Set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "cmake_targets")
 
+# 如果VCPKG_TARGET_TRIPLET中包含static，则设置WITH_STATIC_RUNTIME为ON
+if (VCPKG_TARGET_TRIPLET MATCHES "static")
+    set(WITH_STATIC_RUNTIME ON)
+else()
+    set(WITH_STATIC_RUNTIME OFF)
+endif()
+
 add_subdirectory(source)
 
 add_subdirectory(tests/c)

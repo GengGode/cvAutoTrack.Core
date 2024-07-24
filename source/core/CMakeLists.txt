@@ -1,21 +1,17 @@
-
-find_package(OpenCV REQUIRED)
-
 add_library(cvAutoTrack.Core SHARED)
 set(library_target_name cvAutoTrack.Core)
 
-# utf8
+set_target_properties(${library_target_name} PROPERTIES FOLDER "core")
+set_target_properties(${library_target_name} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>$<$<NOT:$<BOOL:${WITH_STATIC_RUNTIME}>>:DLL>")
 target_compile_options(${library_target_name} PRIVATE /utf-8)
-# use c++17
 target_compile_options(${library_target_name} PRIVATE /std:c++20)
-target_compile_definitions(${library_target_name} PRIVATE CVAUTOTRACK_CORE_EXPORTS)
-
+target_include_directories(${library_target_name} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(${library_target_name} PUBLIC ${include_dir})
 target_include_directories(${library_target_name} PRIVATE ${source_dir})
 
-target_sources(${library_target_name} PRIVATE core.inface.cpp)
+target_compile_definitions(${library_target_name} PRIVATE CVAUTOTRACK_CORE_EXPORTS)
 
-set_target_properties(${library_target_name} PROPERTIES FOLDER "core")
+target_sources(${library_target_name} PRIVATE core.inface.cpp)
 
 # 需要运行脚本将头文件转为cs原生代码  ClangSharpPInvokeGenerator --file cvAutoTrack.Core.h --namespace cvAutoTrack.Core.Native --output "cvAutoTrack.Core.Native.cs"
 # 先拷贝头文件到输出目录
