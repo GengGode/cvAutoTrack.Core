@@ -17,6 +17,7 @@ namespace tianli::frame
         {
             unknown,
             bitblt,
+            print_window,
             window_graphics,
             video,
             picture

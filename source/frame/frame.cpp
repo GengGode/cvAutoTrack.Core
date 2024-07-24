@@ -1,5 +1,6 @@
 #include "frame.include.h"
 #include "capture/capture.bitblt.h"
+#include "capture/capture.print_window.h"
 #include "capture/capture.window_graphics.h"
 #include "local/local.picture.h"
 #include "local/local.video.h"
@@ -24,6 +25,8 @@ namespace tianli::frame
         {
         case frame_source::source_type::bitblt:
             return std::make_shared<capture::capture_bitblt>();
+        case frame_source::source_type::print_window:
+            return std::make_shared<capture::capture_print_window>();
         case frame_source::source_type::window_graphics:
             return std::make_shared<capture::capture_window_graphics>();
         default:
