@@ -37,6 +37,15 @@ extern "C"
         int (*get_info_count)(int* count);
     };
 
+    struct cvAutoTrackContext;
+    struct cvAutoTrackContextImpl;
+    typedef struct cvAutoTrackContext * context_ptr;
+    typedef struct cvAutoTrackContextImpl * context_impl_ptr;
+    struct cvAutoTrackContext
+    {
+        context_impl_ptr impl;
+        void (*destroy)(context_ptr context);
+    };
 
     //typedef void (*callback_t)(in_string_ptr key, in_string_ptr value, void* user_data);
 
@@ -48,22 +57,9 @@ extern "C"
     {
         core_impl_ptr impl;
         void (*destroy)(core_ptr core);
-        int (*sync_call)(in_string_ptr member_key, void* user_data);
-        // thread safe
-        int (*async_call)(in_string_ptr member_key, void* user_data, unsigned int* request_id);
-        int (*get_request_status)(unsigned int request_id, int* status);
 
         error_infos_ptr (*create_error_infos)();
-
-        //int (*init)();
-        //int (*release)();
-        //int (*start)();
-        //int (*stop)();
-        //int (*setConfig)(in_string_ptr key, in_string_ptr value);
-        //int (*getConfig)(in_string_ptr key, out_string_ptr value, int size);
-        //int (*setCallback)(in_string_ptr callback_key, callback_t callback, void* user_data);
-        //int (*removeCallback)(in_string_ptr callback_key);
-        //int (*call)(in_string_ptr callback_key, in_string_ptr key, in_string_ptr value, void* user_data);
+        context_ptr (*create_context)();
     };
      
     CVAUTOTRACK_CORE_API core_ptr CreateInstance();

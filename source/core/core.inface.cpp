@@ -63,14 +63,20 @@ core_ptr CreateInstance()
     auto core = new cvAutoTrackCore();
     core->destroy = [](core_ptr core)
     { delete core; };
-    core->sync_call = [](in_string_ptr member_key, void *user_data)
-    { return deferr("未定义"); };
-    core->async_call = [](in_string_ptr member_key, void *user_data, unsigned int *request_id)
-    { return deferr("未定义"); };
-    core->get_request_status = [](unsigned int request_id, int *status)
-    { return deferr("未定义"); };
+
     core->create_error_infos = []()
     { return create_error_infos(); };
-    
+    core->create_context = []()
+    {
+        auto context = new cvAutoTrackContext();
+        //context->impl = new cvAutoTrackContextImpl();
+        context->destroy = [](context_ptr context)
+        {
+            delete context->impl;
+            delete context;
+        };
+        return context;
+    };
+
     return core;
 }
