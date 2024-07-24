@@ -3,6 +3,7 @@
 add_subdirectory(logger)
 add_subdirectory(frame)
 add_subdirectory(core)
+add_subdirectory(gui)
 
 
 #add_library(cvAutoTrack.Core SHARED)

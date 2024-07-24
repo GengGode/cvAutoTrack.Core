@@ -2,6 +2,7 @@
 #include "imapp/imapp.h"
 #include "imgui_implot/implot.h"
 #include "imgui_implot/implot_internal.h"
+#include "comments/image_inspect_pool.hpp"
 
 class tracker_context;
 
@@ -13,10 +14,15 @@ public:
 public:
     void init(ImGuiIO& io) override;
     void next_frame(ImGuiIO& io) override;
-    void destory(ImGuiIO& io) override;
+    void destory(ImGuiIO& io) override
+    {
+        ImPlot::DestroyContext(plot_ctx);
+        ctx.reset();
+    }
 public:
-    std::shared_ptr<tracker_context> ctx;
     ImPlotContext* plot_ctx =nullptr;
+    image_inspect_pool inspect_pool;
+    std::shared_ptr<tracker_context> ctx;
 };
 
 #include <chrono>
@@ -58,18 +64,19 @@ struct time_lines
 };
 
 struct variable_pool {
-    std::chrono::microseconds capture_interval = std::chrono::milliseconds(0);// / 1000;
+    std::chrono::microseconds capture_interval = std::chrono::milliseconds(33);// / 1000;
     std::chrono::system_clock::time_point current_time = std::chrono::system_clock::now();
     std::chrono::system_clock::time_point capture_until = current_time + capture_interval;
     size_t capture_frame_count = 0;
     std::list<std::chrono::system_clock::time_point> capture_times;
 
-    std::shared_ptr<tianli::frame::frame_source> source = tianli::frame::create_capture_source(tianli::frame::frame_source::source_type::bitblt);
+    std::shared_ptr<tianli::frame::capture_source> source = tianli::frame::create_capture_source(tianli::frame::frame_source::source_type::bitblt);
 
     time_frame current_frame;
     cv::Mat frame;
 
     time_lines lines;
+    std::function<void(std::string, cv::Mat&)> sync_variables_frame;
 };
 struct task;
 struct tasks {
@@ -99,6 +106,9 @@ struct task {
         stop();
     }
 
+    virtual void init() {
+
+    }
     virtual void cycle() {
     };
 
@@ -119,51 +129,54 @@ struct task {
     }
     void run() {
         stop_token = thread.get_stop_token();
+        init();
         while (!stop_token.stop_requested()) {
             cycle();
         }
     }
-
     std::jthread thread;
     std::stop_token stop_token;
 };
 
 struct capture_task :task {
     capture_task(variable_pool& vars, std::condition_variable& cv, condition_variable_group& cvs) : task(vars, cv, cvs) {}
+    void init() override{
+        vars.source->set_capture_handle(GetDesktopWindow());
+    }
     void cycle() override
     {
-        //std::unique_lock<std::mutex> lock(mutex);
-        //cv.wait_until(lock, vars.capture_until, [this]() {
-        //    auto now = std::chrono::system_clock::now();
-        //    return now >= vars.capture_until;
-        //    });
+        std::unique_lock<std::mutex> lock(mutex);
+        cv.wait_until(lock, vars.capture_until, [this]() {
+            auto now = std::chrono::system_clock::now();
+            return now >= vars.capture_until;
+            });
         if (stop_token.stop_requested())
             return;
 
-        vars.lines.add_point("capture", std::chrono::system_clock::now());
+        vars.lines.add_point("采集", std::chrono::system_clock::now());
         if (vars.source->get_frame(vars.frame))
         {
            // std::cout << std::format("capture frame {}\n", vars.capture_frame_count);
         }
 		else
 		{
-			std::cout << std::format("capture frame {} failed\n", vars.capture_frame_count);
+			//std::cout << std::format("capture frame {} failed\n", vars.capture_frame_count);
 		}
-        vars.lines.add_point("capture end", std::chrono::system_clock::now());
+        vars.lines.add_point("采集", std::chrono::system_clock::now());
 
         vars.current_time = std::chrono::system_clock::now();
         vars.capture_until = vars.current_time + vars.capture_interval;
 
         if (vars.capture_times.size() > 2)
         {
-            std::cout << std::format("capture frame interval = {}ms\n", (vars.current_time - vars.capture_times.back()).count()/10000.0);
+            //std::cout << std::format("capture frame interval = {}ms\n", (vars.current_time - vars.capture_times.back()).count()/10000.0);
         }
         vars.capture_times.push_back(vars.current_time);
 
         vars.capture_frame_count += 1;
-        std::cout << std::format("cycle capture_frame_count = {}\n", vars.capture_frame_count);
+        //std::cout << std::format("cycle capture_frame_count = {}\n", vars.capture_frame_count);
 
-        //cvs.pre_process.notify_one();
+        cvs.pre_process.notify_one();
     }
 };
 struct pre_process_task :task {
@@ -174,11 +187,16 @@ struct pre_process_task :task {
         cv.wait(lock);
         if (stop_token.stop_requested())
             return;
+        vars.lines.add_point("预处理", std::chrono::system_clock::now());
 
+        if(vars.sync_variables_frame)
+            vars.sync_variables_frame("frame", vars.frame);
+        //std::this_thread::sleep_for(std::chrono::milliseconds(100));
         //std::cout<< std::format("from capture frame {}\n", vars.capture_frame_count);
 
         //auto available_frame = get_available_frame(frame);
         //sync_variable("available_frame", available_frame);
+        vars.lines.add_point("预处理", std::chrono::system_clock::now());
 
         cvs.partial_match.notify_one();
         cvs.overall_match.notify_one();
@@ -192,11 +210,14 @@ struct partial_match_task :task {
         cv.wait(lock);
         if (stop_token.stop_requested())
             return;
+        vars.lines.add_point("局部匹配", std::chrono::system_clock::now());
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
        // std::cout<< std::format("λ�� frame {}\n", vars.capture_frame_count);
 
         //auto displacement = calc_relative_displacement(available_frame);
         //sync_variable("displacement", displacement);
+        vars.lines.add_point("局部匹配", std::chrono::system_clock::now());
 
         cvs.data_fusion.notify_one();
     }
@@ -209,12 +230,14 @@ struct overall_match_task :task {
         cv.wait(lock);
         if (stop_token.stop_requested())
             return;
+        vars.lines.add_point("全局匹配", std::chrono::system_clock::now());
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
        // std::cout<< std::format("ȫ��λ�� frame {}\n", vars.capture_frame_count);
 
         //auto position = calc_global_position(available_frame);
         //sync_variable("position", position);
+        vars.lines.add_point("全局匹配", std::chrono::system_clock::now());
 
         cvs.data_fusion.notify_one();
     }
@@ -227,8 +250,11 @@ struct data_fusion_task : task {
         cv.wait(lock);
         if (stop_token.stop_requested())
             return;
+        vars.lines.add_point("数据融合", std::chrono::system_clock::now());
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
        // std::cout<< std::format("�ں� frame {}\n", vars.capture_frame_count);
+        vars.lines.add_point("数据融合", std::chrono::system_clock::now());
     }
 };
 

@@ -6,3 +6,8 @@ tests/csharp/bin/
 tests/csharp/obj/
 tests/csharp/cvAutoTrack.Core.dll
 tests/csharp/cvAutoTrack.Core.Native.cs
+source/gui/imapp/resource/map.png
+source/gui/imapp/resource/feature/
+source/gui/imapp/resource/map/
+source/gui/imapp/resource/points/
+.gitignore

@@ -23,3 +23,4 @@ Set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "cmake_targets")
 add_subdirectory(source)
 
 add_subdirectory(tests/c)
+add_subdirectory(tests/cpp-gui)

@@ -1,125 +1,103 @@
 #include "debugger.hpp"
 
+#include <opencv2/imgproc.hpp>
+
+static auto bind_texture=[](cv::Mat& mat, ImTextureID& texture_id, bool need_to_rgba)
+{
+    if (mat.empty())
+        return;
+    if (texture_id == nullptr)
+    {
+        GLuint new_texture_id = 0;
+        glGenTextures(1, &new_texture_id);
+        texture_id = reinterpret_cast<ImTextureID>(static_cast<int64_t>(new_texture_id));
+    }
+    if(need_to_rgba)
+        cv::cvtColor(mat, mat, cv::COLOR_BGRA2RGBA);
+    glBindTexture(GL_TEXTURE_2D, texture_cast(texture_id));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mat.cols, mat.rows, 0, GL_RGBA, GL_UNSIGNED_BYTE, mat.data);
+};
+static auto rebind_texture=[](cv::Mat& mat, ImTextureID& texture_id, bool need_to_rgba)
+{
+    if (mat.empty())
+        return;
+    if (need_to_rgba)
+        cv::cvtColor(mat, mat, cv::COLOR_BGRA2RGBA);
+    glBindTexture(GL_TEXTURE_2D, texture_cast(texture_id));
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mat.cols, mat.rows, 0, GL_RGBA, GL_UNSIGNED_BYTE, mat.data);
+};
+    
 
 void debugger::init(ImGuiIO& io) {
+    this->font = io.Fonts->AddFontFromFileTTF("resource/zh-cn.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
     ctx = create_tracker_context();
     plot_ctx = ImPlot::CreateContext();
+    ctx->variables->sync_variables_frame = [this](std::string key, cv::Mat& mat){
+        inspect_pool.async_update(key, mat);
+    };
+    inspect_pool.release_texture = [this](ImTextureID texture_id){
+        if (texture_id == nullptr)
+            return;
+        auto gl_texture = static_cast<GLuint>(reinterpret_cast<uintptr_t>(texture_id));
+        glDeleteTextures(1, &gl_texture);
+        texture_id = nullptr;
+    };
+    inspect_pool.mat_to_texture =[](cv::Mat& mat, ImTextureID& texture_id)
+    {
+        if (mat.empty())
+			return;
+        if (texture_id == nullptr)
+            return bind_texture(mat, texture_id, mat.channels()!=4);
+        return rebind_texture(mat, texture_id, mat.channels()!=4);
+    };
 }
 void debugger::next_frame(ImGuiIO& io){
+    inspect_pool.bind_texture();
+    inspect_pool.render();
+
     ImGui::Begin("Debugger");
-    ImGui::Text("Hello, world!");
+    ImGui::Text("耗时：%.3f ms 帧率： (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
     ImGui::End();
+    static auto begin = std::chrono::system_clock::now();
 
     ImGui::Begin("Plot");
-    auto lines = ctx->variables->lines.clone_vector();
-    std::vector<std::vector<double>> data;
-    for (auto& line : lines)
+    auto lines = ctx->variables->lines.clone();
+    std::unordered_map<std::string, std::vector<ImVec2>> data;
+    float count = 0;
+    for (auto& [key,line] : lines)
 	{
-		std::vector<double> line_data;
+        count++;
+		std::vector<ImVec2> line_data;
 		for (auto& point : line)
 		{
-			line_data.push_back(std::chrono::duration_cast<std::chrono::microseconds>(point.time_since_epoch()).count());
+			line_data.emplace_back((float)std::chrono::duration_cast<std::chrono::milliseconds>(point-begin).count(), count);
 		}
-		data.push_back(line_data);
+		data.emplace(key,line_data);
 	}
+    ImGui::Text("Lines: %d", lines.size());
+    static int range = std::chrono::milliseconds(1000).count();
+    ImGui::DragInt("Range:", &range);
     
-    auto now = std::chrono::system_clock::now();
-    auto now_time = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count();
+    auto now = std::chrono::system_clock::now() - begin;
+    auto now_time = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
 
 
-    if (ImPlot::BeginPlot("Line Plot", "x", "y")) {
-        // 设置显示范围
-        ImPlot::SetNextPlotLimitsX(now_time - 1000000, now_time, ImGuiCond_Always);
-
-
-
-        ImPlot::PlotDigital
+    if (ImPlot::BeginPlot("Line Plot", "x", "y", ImVec2(-1,-1))) {
+        ImPlot::SetupAxisLimits(ImAxis_X1,now_time - range, now_time, ImGuiCond_Always);
+        ImPlot::SetupAxisLimits(ImAxis_Y1,0,6);
+        //ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL,0.5f);
+        ImPlot::PushStyleVar(ImPlotStyleVar_LineWeight, 5.0f);
+        for(auto& [key,line] : data){
+            ImPlot::PlotLine(key.c_str(), &line[0].x, &line[0].y, line.size(), ImPlotLineFlags_Segments, 0, 2*sizeof(float));
+        }
+        ImPlot::PopStyleVar();
 
         ImPlot::EndPlot();
     }
     ImGui::End();
 
-}
-void debugger::destory(ImGuiIO& io) {
-    ImPlot::DestroyContext(plot_ctx);
-    ctx.reset();
-}
-
-// utility structure for realtime plot
-struct ScrollingBuffer {
-    int MaxSize;
-    int Offset;
-    ImVector<ImVec2> Data;
-    ScrollingBuffer(int max_size = 2000) {
-        MaxSize = max_size;
-        Offset  = 0;
-        Data.reserve(MaxSize);
-    }
-    void AddPoint(float x, float y) {
-        if (Data.size() < MaxSize)
-            Data.push_back(ImVec2(x,y));
-        else {
-            Data[Offset] = ImVec2(x,y);
-            Offset =  (Offset + 1) % MaxSize;
-        }
-    }
-    void Erase() {
-        if (Data.size() > 0) {
-            Data.shrink(0);
-            Offset  = 0;
-        }
-    }
-};
-
-// utility structure for realtime plot
-struct RollingBuffer {
-    float Span;
-    ImVector<ImVec2> Data;
-    RollingBuffer() {
-        Span = 10.0f;
-        Data.reserve(2000);
-    }
-    void AddPoint(float x, float y) {
-        float xmod = fmodf(x, Span);
-        if (!Data.empty() && xmod < Data.back().x)
-            Data.shrink(0);
-        Data.push_back(ImVec2(xmod, y));
-    }
-};
-
-void Demo_RealtimePlots() {
-    static ScrollingBuffer sdata1, sdata2;
-    static RollingBuffer   rdata1, rdata2;
-    ImVec2 mouse = ImGui::GetMousePos();
-    static float t = 0;
-    t += ImGui::GetIO().DeltaTime;
-    sdata1.AddPoint(t, mouse.x * 0.0005f);
-    rdata1.AddPoint(t, mouse.x * 0.0005f);
-    sdata2.AddPoint(t, mouse.y * 0.0005f);
-    rdata2.AddPoint(t, mouse.y * 0.0005f);
-
-    static float history = 10.0f;
-    ImGui::SliderFloat("History",&history,1,30,"%.1f s");
-    rdata1.Span = history;
-    rdata2.Span = history;
-
-    static ImPlotAxisFlags flags = ImPlotAxisFlags_NoTickLabels;
-
-    if (ImPlot::BeginPlot("##Scrolling", ImVec2(-1,150))) {
-        ImPlot::SetupAxes(NULL, NULL, flags, flags);
-        ImPlot::SetupAxisLimits(ImAxis_X1,t - history, t, ImGuiCond_Always);
-        ImPlot::SetupAxisLimits(ImAxis_Y1,0,1);
-        ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL,0.5f);
-        ImPlot::PlotShaded("Mouse X", &sdata1.Data[0].x, &sdata1.Data[0].y, sdata1.Data.size(), -INFINITY, 0, sdata1.Offset, 2 * sizeof(float));
-        ImPlot::PlotLine("Mouse Y", &sdata2.Data[0].x, &sdata2.Data[0].y, sdata2.Data.size(), 0, sdata2.Offset, 2*sizeof(float));
-        ImPlot::EndPlot();
-    }
-    if (ImPlot::BeginPlot("##Rolling", ImVec2(-1,150))) {
-        ImPlot::SetupAxes(NULL, NULL, flags, flags);
-        ImPlot::SetupAxisLimits(ImAxis_X1,0,history, ImGuiCond_Always);
-        ImPlot::SetupAxisLimits(ImAxis_Y1,0,1);
-        ImPlot::PlotLine("Mouse X", &rdata1.Data[0].x, &rdata1.Data[0].y, rdata1.Data.size(), 0, 0, 2 * sizeof(float));
-        ImPlot::PlotLine("Mouse Y", &rdata2.Data[0].x, &rdata2.Data[0].y, rdata2.Data.size(), 0, 0, 2 * sizeof(float));
-        ImPlot::EndPlot();
-    }
+    is_need_new_frame =true;
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }

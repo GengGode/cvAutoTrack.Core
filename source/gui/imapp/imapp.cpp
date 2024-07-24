@@ -96,8 +96,8 @@ imapp::imapp(window_create_params window_create) : window_create(window_create)
             window_create.parent = nullptr;
         wgl.target_parent = window_create.parent;
 
-        wgl.app_name = tianli::global::to_shared_wstring(L"app-window " + std::to_wstring(reinterpret_cast<int64_t>(window_create.parent)));
-        wgl.app_class_name = tianli::global::to_shared_wstring(L"ImAppClass " + std::to_wstring(reinterpret_cast<int64_t>(window_create.parent)));
+        wgl.app_name = tianli::global::to_shared_wstring(L"imapp");// + std::to_wstring(reinterpret_cast<int64_t>(window_create.parent)));
+        wgl.app_class_name = tianli::global::to_shared_wstring(L"ImAppClass");// + std::to_wstring(reinterpret_cast<int64_t>(window_create.parent)));
         
         wgl.size = { window_create.width, window_create.height };
 

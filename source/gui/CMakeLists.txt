@@ -26,6 +26,7 @@ set(imgui_sources ${imgui_sources} ${imgui_backends_dir}/imgui_impl_win32.cpp)
 set(imgui_sources ${imgui_sources} ${imgui_backends_dir}/imgui_impl_opengl3.cpp)
 
 find_package(OpenGL REQUIRED)
+find_package(glew REQUIRED)
 
 target_sources(${library_target_name}
     PUBLIC
@@ -40,6 +41,8 @@ target_sources(${library_target_name}
         ${imgui_sources}
         ${imgui_third_dir}/imgui_implot/implot.cpp
         ${imgui_third_dir}/imgui_implot/implot_items.cpp
+        ${imgui_third_dir}/imgui_tex_inspect/imgui_tex_inspect.cpp
+        ${imgui_third_dir}/imgui_tex_inspect/tex_inspect_opengl.cpp
         )
 
 set(WITH_DYNAMIC_OPENCV OFF)
@@ -55,5 +58,6 @@ target_link_libraries(${library_target_name}
         dxgi.lib
 
         opengl32.lib
+        GLEW::GLEW
         )
         
