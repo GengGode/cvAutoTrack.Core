@@ -2,6 +2,7 @@
   "dependencies": [
     "cereal",
     "fmt",
-    "opencv4"
+    "opencv4",
+    "glew"
   ]
 }
