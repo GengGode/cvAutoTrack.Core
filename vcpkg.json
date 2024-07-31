@@ -2,7 +2,14 @@
   "dependencies": [
     "cereal",
     "fmt",
-    "opencv4",
-    "glew"
+    "glew",
+    {
+      "name": "opencv",
+      "features": [
+        "contrib",
+        "nonfree",
+        "tbb"
+      ]
+    }
   ]
 }
