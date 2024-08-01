@@ -1,10 +1,9 @@
 add_library(cvAutoTrack.Core SHARED)
 set(library_target_name cvAutoTrack.Core)
 
+project_set_options(${library_target_name})
 set_target_properties(${library_target_name} PROPERTIES FOLDER "core")
 set_target_properties(${library_target_name} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>$<$<NOT:$<BOOL:${WITH_STATIC_RUNTIME}>>:DLL>")
-target_compile_options(${library_target_name} PRIVATE /utf-8)
-target_compile_options(${library_target_name} PRIVATE /std:c++20)
 target_include_directories(${library_target_name} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(${library_target_name} PUBLIC ${include_dir})
 target_include_directories(${library_target_name} PRIVATE ${source_dir})

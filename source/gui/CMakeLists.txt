@@ -2,10 +2,9 @@ add_library(tianli_gui STATIC)
 add_library(tianli::gui ALIAS tianli_gui)
 set(library_target_name tianli_gui)
 
+project_set_options(${library_target_name})
 set_target_properties(${library_target_name} PROPERTIES FOLDER "core/modules")
 set_target_properties(${library_target_name} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>$<$<NOT:$<BOOL:${WITH_STATIC_RUNTIME}>>:DLL>")
-target_compile_options(${library_target_name} PRIVATE /utf-8)
-target_compile_options(${library_target_name} PRIVATE /std:c++20)
 target_include_directories(${library_target_name} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(${library_target_name} PRIVATE ${source_dir})
 target_include_directories(${library_target_name} PRIVATE imapp)
@@ -43,10 +42,10 @@ target_link_libraries(${library_target_name} PUBLIC tianli::frame)
 target_link_libraries(${library_target_name} PUBLIC tianli::genshin)
 target_link_libraries(${library_target_name}
     PUBLIC
-        ${OpenCV_LIBS}
-        d3d11.lib 
-        d3dcompiler.lib 
-        dxgi.lib
+        # ${OpenCV_LIBS}
+        # d3d11.lib 
+        # d3dcompiler.lib 
+        # dxgi.lib
 
         opengl32.lib
         GLEW::GLEW
