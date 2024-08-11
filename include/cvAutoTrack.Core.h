@@ -90,6 +90,7 @@ extern "C"
         error_code_t (*get_frame)(frame_source_ptr frame_source);
         error_code_t (*get_frame_data)(frame_source_ptr frame_source, out_string_ptr data, int size);
         error_code_t (*get_frame_data_size)(frame_source_ptr frame_source, int* size);
+        error_code_t (*save_frame)(frame_source_ptr frame_source, in_string_ptr path);
     };
 
     enum local_source_type
