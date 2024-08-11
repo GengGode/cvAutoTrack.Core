@@ -151,6 +151,9 @@ extern "C"
         error_infos_ptr (*create_error_infos)();
         context_ptr (*create_context)();
         frame_factory_ptr (*create_frame_factory)();
+
+        error_code_t (*get_version)(string_ptr version);
+        error_code_t (*get_compile_info)(string_ptr info);
     };
      
     CVAUTOTRACK_CORE_API core_ptr CreateInstance();
