@@ -77,9 +77,9 @@ extern "C"
         error_infos_impl_ptr impl;
         void (*destroy)(error_infos_ptr error_infos);
         error_code_t (*set_infos_encoding)(error_infos_ptr error_infos, in_string_ptr encoding);
-        error_code_t (*get_infos_encoding)(error_infos_ptr error_infos, out_string_ptr encoding, int size);
-        error_code_t (*get_info)(error_infos_ptr error_infos, int index, out_string_ptr info, int size);
-        error_code_t (*get_info_raw)(error_infos_ptr error_infos, int index, out_string_ptr info, int size);
+        error_code_t (*get_infos_encoding)(error_infos_ptr error_infos, string_ptr encoding);
+        error_code_t (*get_info)(error_infos_ptr error_infos, int index, string_ptr info);
+        error_code_t (*get_info_raw)(error_infos_ptr error_infos, int index, string_ptr info);
         error_code_t (*get_info_count)(int* count);
     };
 
