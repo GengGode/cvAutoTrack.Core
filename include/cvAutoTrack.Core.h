@@ -87,6 +87,7 @@ extern "C"
     {
         frame_source_impl_ptr impl;
         void (*destroy)(frame_source_ptr frame_source);
+        error_code_t (*set_interval)(frame_source_ptr frame_source, int ms_interval);
         error_code_t (*get_frame)(frame_source_ptr frame_source);
         error_code_t (*get_frame_data)(frame_source_ptr frame_source, out_string_ptr data, int size);
         error_code_t (*get_frame_data_size)(frame_source_ptr frame_source, int* size);
