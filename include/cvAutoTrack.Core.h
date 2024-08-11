@@ -77,9 +77,9 @@ extern "C"
         error_infos_impl_ptr impl;
         void (*destroy)(error_infos_ptr error_infos);
         error_code_t (*set_infos_encoding)(error_infos_ptr error_infos, in_string_ptr encoding);
-        error_code_t (*get_infos_encoding)(error_infos_ptr error_infos, string_ptr encoding);
-        error_code_t (*get_info)(error_infos_ptr error_infos, int index, string_ptr info);
-        error_code_t (*get_info_raw)(error_infos_ptr error_infos, int index, string_ptr info);
+        error_code_t (*get_infos_encoding)(error_infos_ptr error_infos, string_ptr* encoding);
+        error_code_t (*get_info)(error_infos_ptr error_infos, int index, string_ptr* info);
+        error_code_t (*get_info_raw)(error_infos_ptr error_infos, int index, string_ptr* info);
         error_code_t (*get_info_count)(int* count);
     };
 
@@ -129,8 +129,8 @@ extern "C"
         frame_factory_impl_ptr impl;
         void (*destroy)(frame_factory_ptr frame_factory);
 
-        frame_source_ptr (*create_local_source)(frame_factory_ptr frame_factory, local_source_type source_type);
-        frame_source_ptr (*create_capture_source)(frame_factory_ptr frame_factory, capture_source_type source_type);
+        frame_source_ptr (*create_local_source)(frame_factory_ptr frame_factory, enum local_source_type source_type);
+        frame_source_ptr (*create_capture_source)(frame_factory_ptr frame_factory, enum capture_source_type source_type);
     };
 
     struct cvAutoTrackContext
@@ -141,7 +141,7 @@ extern "C"
         error_code_t (*start_server)(context_ptr context);
         error_code_t (*stop_server)(context_ptr context);
         error_code_t (*set_frame_source)(context_ptr context, frame_source_ptr source);
-        error_code_t (*get_property)(context_ptr context, in_string_ptr key, string_ptr value);
+        error_code_t (*get_property)(context_ptr context, in_string_ptr key, string_ptr* value);
     };
 
     struct cvAutoTrackCore
@@ -153,8 +153,8 @@ extern "C"
         context_ptr (*create_context)();
         frame_factory_ptr (*create_frame_factory)();
 
-        error_code_t (*get_version)(string_ptr version);
-        error_code_t (*get_compile_info)(string_ptr info);
+        error_code_t (*get_version)(string_ptr* version);
+        error_code_t (*get_compile_info)(string_ptr* info);
     };
      
     CVAUTOTRACK_CORE_API core_ptr CreateInstance();

@@ -5,6 +5,22 @@
 #include <map>
 #include <functional>
 
+struct cvAutoTrackStringImpl
+{
+    std::string str;
+    int set_string(std::string str){
+        this->str = str;
+        return 0;
+    }
+    int get_string(std::string &str){
+        str = this->str;
+        return 0;
+    }
+    int get_length(){
+        return str.size();
+    }
+};
+
 std::map<std::string, std::function<std::string(std::string)>> g_convectors = {
     {"utf-8", [](std::string str) { return str; }},
     {"gbk", [](std::string str) { return tianli::global::utf8_to_gbk(str); }},
