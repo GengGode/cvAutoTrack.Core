@@ -163,7 +163,7 @@ namespace tianli::frame::capture::utils::window_graphics
     inline void set_capture_session_property(winrt::Windows::Graphics::Capture::GraphicsCaptureSession& session, bool is_border = false, bool is_cursor = false)
     {
         // 判断 WindowsSDK 版本大于等于 10.0.22000.0
-#if (WINVER >= _WIN32_WINNT_WIN10_21H1)
+#if (WINVER >= _WIN32_WINNT_WIN10_21H2)
         try
         {
             if (winrt::Windows::Foundation::Metadata::ApiInformation::IsPropertyPresent(L"Windows.Graphics.Capture.GraphicsCaptureSession", L"IsBorderRequired"))
