@@ -13,7 +13,13 @@ namespace tianli::genshin
         {
             for(const auto& name : genshin_names)
             {
-                handle = FindWindowW(L"UnityClassWnd", name.c_str());
+                handle = FindWindowW(L"UnityWndClass", name.c_str());
+                if(handle != nullptr)
+                    return true;
+            }
+            for(const auto& name : genshin_names_utf8)
+            {
+                handle = FindWindowA("UnityWndClass", name.c_str());
                 if(handle != nullptr)
                     return true;
             }
@@ -22,6 +28,9 @@ namespace tianli::genshin
     private:
         const static inline std::array<std::wstring, 3> genshin_names={
             L"原神", L"원신", L"Genshin Impact"
+        };
+        const static inline std::array<std::string, 3> genshin_names_utf8={
+            "原神", "원신", "Genshin Impact"
         };
     };
 }
