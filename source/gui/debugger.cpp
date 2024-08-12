@@ -55,6 +55,13 @@ void debugger::init(ImGuiIO& io) {
     };
 
     genshin = tianli::genshin::create_genshin_handle(tianli::genshin::genshin_handle::hanlde_type::official);
+    HWND handle{};
+    if(genshin->get_handle(handle)==false)
+    {
+        std::cout << "Can't find genshin window" << std::endl;
+        return; 
+    }
+    ctx->variables->source->set_capture_handle(handle);
 }
 void debugger::next_frame(ImGuiIO& io){
     inspect_pool.bind_texture();
