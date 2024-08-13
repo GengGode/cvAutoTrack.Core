@@ -74,7 +74,7 @@ struct variable_pool {
     size_t capture_frame_count = 0;
     std::list<std::chrono::system_clock::time_point> capture_times;
 
-    std::shared_ptr<tianli::frame::capture_source> source = tianli::frame::create_capture_source(tianli::frame::frame_source::source_type::bitblt);
+    std::shared_ptr<tianli::frame::capture_source> source = tianli::frame::create_capture_source(tianli::frame::frame_source::source_type::window_graphics);
 
     time_frame current_frame;
     cv::Mat frame;
