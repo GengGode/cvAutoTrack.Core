@@ -92,7 +92,7 @@ public:
 
         if(select_key != "")
 		{
-			remove(select_key);
+			sync_remove(select_key);
 		}
 
         for (auto& [key, value] : context_map)
@@ -104,15 +104,12 @@ public:
                 ImGui::Begin(widget_name.c_str(), &value.is_open);
                 auto size = ImGui::GetContentRegionAvail();
                 auto image_size = ImVec2(value.mat.cols, value.mat.rows);
-                //ImGuiTexInspect::BeginInspectorPanel(value.context, inspector_name.c_str(), value.texture, image_size, ImGuiTexInspect::InspectorFlags_NoGrid, ImGuiTexInspect::SizeExcludingBorder(size - ImVec2(2, 2)));
-                //ImGuiTexInspect::DrawAnnotations(value.context, ImGuiTexInspect::ValueText(ImGuiTexInspect::ValueText::BytesDec));
-                //ImGuiTexInspect::EndInspectorPanel(value.context);
                 if (ImGui::Button("+"))
                 {
                     value.roi_map.insert_or_assign(value.roi_map.size(), rect_info{ 0,0,static_cast<double>(value.mat.cols),static_cast<double>(value.mat.rows) });
                 }
-                if (ImPlot::BeginPlot(widget_name.c_str(),size)) {
-                    ImPlot::SetupAxes(NULL, NULL, ImPlotAxisFlags_NoTickLabels, ImPlotAxisFlags_NoTickLabels);
+                if (ImPlot::BeginPlot(widget_name.c_str(),size - ImVec2(0,30), ImPlotFlags_NoLegend | ImPlotFlags_NoTitle | ImPlotFlags_Equal)) {
+                    ImPlot::SetupAxes(NULL, NULL, ImPlotAxisFlags_NoLabel | ImPlotAxisFlags_NoTickLabels, ImPlotAxisFlags_NoLabel | ImPlotAxisFlags_NoTickLabels);
                     ImPlot::SetupAxesLimits(0, image_size.x, 0, image_size.y);
                     ImPlot::SetupAxis(ImAxis_Y1, 0, ImPlotAxisFlags_Invert);
                     ImPlot::PlotImage(inspector_name.c_str(), value.texture, {}, image_size, {}, { 1, -1 });
@@ -152,71 +149,71 @@ public:
             for (auto& [rect_id, rect] : value.roi_map)
             {
                 auto sub_key = std::format("{} roi_{}", key, rect_id);
-                try {
-                    auto roi_rect = cv::Rect(rect.x_min, rect.y_min, rect.x_max - rect.x_min, rect.y_max - rect.y_min);
-                    roi_rect = roi_rect&cv::Rect(0, 0, value.mat.cols, value.mat.rows);
-                    if (roi_rect.width <= 0 || roi_rect.height <= 0)
-                        continue;
-                    auto roi_mat = value.mat(roi_rect).clone();
-                    if (context_map.find(sub_key) == context_map.end())
-                    {
-                        context_info info;
-                        info.is_need_rebind = true;
-                        info.mat = roi_mat;//.clone();
-                        info.context = ImGuiTexInspect::CreateContext();
-                        context_map.insert_or_assign(sub_key, info);
-                        continue;
-                    }
-                    auto& value = context_map[sub_key];
-                    value.mat = roi_mat;//.clone();
-                    value.is_need_rebind = true;
-                }
-                catch (...)
-                {
-                }
+                auto roi_rect = cv::Rect(rect.x_min, rect.y_min, rect.x_max - rect.x_min, rect.y_max - rect.y_min);
+                roi_rect = roi_rect&cv::Rect(0, 0, value.mat.cols, value.mat.rows);
+                if (roi_rect.width <= 0 || roi_rect.height <= 0)
+                    continue;
+                auto roi_mat = value.mat(roi_rect);
+                sync_update(sub_key, roi_mat);
             }
             it++;
 		}
 	}
-public:
-    void update(const std::string key,const cv::Mat& mat)
+    void task_process()
     {
-        if (context_map.find(key) == context_map.end())
+        std::unique_lock lock(list_mutex);
+        for (auto& [key, mat] : update_list)
         {
-            context_info info;
-            info.is_need_rebind = true;
-            info.mat = mat;//.clone();
-            info.context = ImGuiTexInspect::CreateContext();
-            context_map.insert_or_assign(key, info);
-            return;
+            if (context_map.find(key) == context_map.end())
+            {
+                context_info info;
+                info.is_need_rebind = true;
+                info.mat = mat;//.clone();
+                info.context = ImGuiTexInspect::CreateContext();
+                context_map.insert_or_assign(key, info);
+                continue;
+            }
+            auto& value = context_map[key];
+            value.mat = mat;//.clone();
+            value.is_need_rebind = true;
         }
-        auto& value = context_map[key];
-        value.mat = mat;//.clone();
-        value.is_need_rebind = true;
+        for (auto& key : remove_list)
+        {
+            if (context_map.find(key) == context_map.end())
+                continue;
+            auto& info = context_map[key];
+            release_texture(info.texture);
+            ImGuiTexInspect::DestroyContext(info.context);
+            context_map.erase(key);
+        }
+        update_list.clear();
+        remove_list.clear();
     }
-	void remove(std::string key)
-	{
-        if (context_map.find(key) == context_map.end())
-			return;
-        auto& info = context_map[key];
-        release_texture(info.texture);
-        ImGuiTexInspect::DestroyContext(info.context);
-        context_map.erase(key);
-	}
-    
+    std::list<std::tuple<std::string,cv::Mat>>          update_list;
+    std::list<std::string>                              remove_list;
+    std::mutex                                          list_mutex;
+public:
+    void sync_update(const std::string key, const cv::Mat& mat)
+    {
+        std::unique_lock lock(list_mutex);
+        update_list.push_back({ key, mat.clone() });
+    }
+    void sync_remove(std::string key)
+    {
+        std::unique_lock lock(list_mutex);
+        remove_list.push_back(key);
+    }
     void async_update(std::string key, cv::Mat& mat)
 	{
-        std::unique_lock lock(mutex);
         std::jthread async = std::jthread([this, key, mat]() {
-            update(key, mat);
+            sync_update(key, mat);
         });
         async.detach();
 	}
     void async_remove(std::string key)
     {
-        std::unique_lock lock(mutex);
         std::jthread async = std::jthread([this, key]() {
-            remove(key);
+            sync_remove(key);
         });
         async.detach();
     }

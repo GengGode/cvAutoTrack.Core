@@ -65,6 +65,7 @@ void debugger::init(ImGuiIO& io) {
 }
 void debugger::next_frame(ImGuiIO& io){
     inspect_pool.bind_texture();
+    inspect_pool.task_process();
     inspect_pool.render();
 
     ImGui::Begin("Debugger");
@@ -72,9 +73,9 @@ void debugger::next_frame(ImGuiIO& io){
     ImGui::End();
     static auto begin = std::chrono::system_clock::now();
 
-    ImGui::Begin("Plot");
     auto lines = ctx->variables->lines.clone();
     std::unordered_map<std::string, std::vector<ImVec2>> data;
+    std::unordered_map<std::string, std::vector<ImVec2>> diff_data;
     float count = 0;
     for (auto& [key,line] : lines)
 	{
@@ -85,14 +86,23 @@ void debugger::next_frame(ImGuiIO& io){
 			line_data.emplace_back((float)std::chrono::duration_cast<std::chrono::milliseconds>(point-begin).count(), count);
 		}
 		data.emplace(key,line_data);
+        std::vector<ImVec2> diff_line_data;
+        if(line_data.size() <= 2)
+            continue;
+        for (int i = 1; i < line_data.size() / 2; i++)
+        {
+            auto diff = line_data[i*2].x - line_data[i*2-1].x;
+            auto diff_time = line_data[i*2].x;
+            diff_line_data.emplace_back(diff_time, diff);
+        }
+        diff_data.emplace(key,diff_line_data);
 	}
+    ImGui::Begin("Plot tick");
     ImGui::Text("Lines: %d", lines.size());
     static int range = std::chrono::milliseconds(1000).count();
     ImGui::DragInt("Range:", &range);
-    
     auto now = std::chrono::system_clock::now() - begin;
     auto now_time = std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
-
 
     if (ImPlot::BeginPlot("Line Plot", "x", "y", ImVec2(-1,-1))) {
         ImPlot::SetupAxisLimits(ImAxis_X1,now_time - range, now_time, ImGuiCond_Always);
@@ -103,7 +113,22 @@ void debugger::next_frame(ImGuiIO& io){
             ImPlot::PlotLine(key.c_str(), &line[0].x, &line[0].y, line.size(), ImPlotLineFlags_Segments, 0, 2*sizeof(float));
         }
         ImPlot::PopStyleVar();
+        ImPlot::EndPlot();
+    }
+    ImGui::End();
 
+    ImGui::Begin("Diff Plot");
+    if (ImPlot::BeginPlot("Diff Plot", "x", "y", ImVec2(-1,-1))) {
+        ImPlot::SetupAxisLimits(ImAxis_X1,now_time - range, now_time, ImGuiCond_Always);
+        ImPlot::SetupAxisLimits(ImAxis_Y1,0,6);
+        //ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL,0.5f);
+        ImPlot::PushStyleVar(ImPlotStyleVar_LineWeight, 5.0f);
+        for(auto& [key,line] : diff_data){
+            if (line.size() <= 2)
+                continue;
+            ImPlot::PlotLine(key.c_str(), &line[0].x, &line[0].y, line.size(), 0, 0, sizeof(ImVec2));
+        }
+        ImPlot::PopStyleVar();
         ImPlot::EndPlot();
     }
     ImGui::End();
