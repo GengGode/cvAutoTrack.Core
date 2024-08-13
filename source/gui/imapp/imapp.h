@@ -108,7 +108,3 @@ public:
     bool uninitialized() override;
     bool execute() override;
 };
-
-// Main code
-int gui_main(imapp& app);
-int gui_main(std::shared_ptr<imapp> app);
