@@ -14,7 +14,7 @@ namespace tianli::frame::capture
         winrt::Windows::Graphics::Capture::GraphicsCaptureSession m_session{ nullptr };
         winrt::Windows::Graphics::SizeInt32 m_lastSize{ };
         winrt::com_ptr<IDXGISwapChain1> m_swapChain{ nullptr };
-
+        bool                            is_async = true;
     public:
         capture_window_graphics()
         {
@@ -46,14 +46,24 @@ namespace tianli::frame::capture
 
             utils::window_graphics::graphics_global::get_instance().d3d_device->GetImmediateContext(m_d3dContext.put());
 
-            m_framePool = winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool::Create(m_device.as<winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice>(),
-                                                                                                static_cast<winrt::Windows::Graphics::DirectX::DirectXPixelFormat>(87), 2, m_lastSize);
-            m_session = m_framePool.CreateCaptureSession(m_item);
-
-            utils::window_graphics::set_capture_session_property(m_session);
-
-            m_session.StartCapture();
-
+            auto dx3d_device = m_device.as<winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice>();
+            if(is_async == false)
+            {            
+                m_framePool = winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool::Create(dx3d_device, static_cast<winrt::Windows::Graphics::DirectX::DirectXPixelFormat>(87), 2, m_lastSize);
+                m_session = m_framePool.CreateCaptureSession(m_item);
+                utils::window_graphics::set_capture_session_property(m_session);
+                m_session.StartCapture();
+            }
+            else
+            {
+                m_framePool = winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool::CreateFreeThreaded(dx3d_device, static_cast<winrt::Windows::Graphics::DirectX::DirectXPixelFormat>(87), 2, m_lastSize);
+                std::thread async_create = std::thread([this]() {
+                    m_session = m_framePool.CreateCaptureSession(m_item);
+                    utils::window_graphics::set_capture_session_property(m_session);
+                    m_session.StartCapture();
+	            });
+                async_create.detach();
+            }
             this->is_initialized = true;
             return true;
         }
