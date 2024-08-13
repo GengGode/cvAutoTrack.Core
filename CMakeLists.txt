@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 
 project(cvAutoTrack.Core)
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 # set environment variable
 #----------------------------------------------------
@@ -26,6 +27,7 @@ if (VCPKG_TARGET_TRIPLET MATCHES "static")
 else()
     set(WITH_STATIC_RUNTIME OFF)
 endif()
+message(STATUS "WITH_STATIC_RUNTIME: ${WITH_STATIC_RUNTIME}")
 
 add_subdirectory(source)
 

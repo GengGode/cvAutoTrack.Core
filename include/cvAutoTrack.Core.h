@@ -23,45 +23,72 @@ extern "C"
     typedef char* out_string_ptr;
     typedef int error_code_t;
 
-    struct cvAutoTrackString;
-    struct cvAutoTrackStringImpl;
-    typedef struct cvAutoTrackString * string_ptr;
-    typedef struct cvAutoTrackStringImpl * string_impl_ptr;
+#define def(type, lite_type) \
+    struct cvAutoTrack##type; \
+    struct cvAutoTrack##type##Impl; \
+    typedef struct cvAutoTrack##type * lite_type##_ptr; \
+    typedef struct cvAutoTrack##type##Impl * lite_type##_impl_ptr;
+#define def_struct(type) struct cvAutoTrack##type
 
-    struct cvAutoTrackErrorInfos;
-    struct cvAutoTrackErrorInfosImpl;
-    typedef struct cvAutoTrackErrorInfos * error_infos_ptr;
-    typedef struct cvAutoTrackErrorInfosImpl * error_infos_impl_ptr;
+    def(String, string);
+    def(ErrorInfos, error_infos);
 
-    struct cvAutoTrackFrameSource;
-    struct cvAutoTrackFrameSourceImpl;
-    typedef struct cvAutoTrackFrameSource * frame_source_ptr;
-    typedef struct cvAutoTrackFrameSourceImpl * frame_source_impl_ptr;
+    def(WindowHandleSource, window_handle_source);
+    def(WindowHandleFactory, window_handle_factory);
 
-    struct cvAutoTrackLocalSource;
-    struct cvAutoTrackLocalSourceImpl;
-    typedef struct cvAutoTrackLocalSource * local_source_ptr;
-    typedef struct cvAutoTrackLocalSourceImpl * local_source_impl_ptr;
+    def(FrameSource, frame_source);
+    def(LocalSource, local_source);
+    def(CaptureSource, capture_source);
+    def(FrameFactory, frame_factory);
 
-    struct cvAutoTrackCaptureSource;
-    struct cvAutoTrackCaptureSourceImpl;
-    typedef struct cvAutoTrackCaptureSource * capture_source_ptr;
-    typedef struct cvAutoTrackCaptureSourceImpl * capture_source_impl_ptr;
+    def(Resource, resource);
 
-    struct cvAutoTrackFrameFactory;
-    struct cvAutoTrackFrameFactoryImpl;
-    typedef struct cvAutoTrackFrameFactory * frame_factory_ptr;
-    typedef struct cvAutoTrackFrameFactoryImpl * frame_factory_impl_ptr;
+    //def(GenshinState, genshin_state);
 
-    struct cvAutoTrackContext;
-    struct cvAutoTrackContextImpl;
-    typedef struct cvAutoTrackContext * context_ptr;
-    typedef struct cvAutoTrackContextImpl * context_impl_ptr;
+    //def(Matcher, matcher);
 
-    struct cvAutoTrackCore;
-    struct cvAutoTrackCoreImpl;
-    typedef struct cvAutoTrackCore * core_ptr;
-    typedef struct cvAutoTrackCoreImpl * core_impl_ptr;
+    def(Context, context);
+    def(Core, core);
+
+    // struct cvAutoTrackString;
+    // struct cvAutoTrackStringImpl;
+    // typedef struct cvAutoTrackString * string_ptr;
+    // typedef struct cvAutoTrackStringImpl * string_impl_ptr;
+// 
+    // struct cvAutoTrackErrorInfos;
+    // struct cvAutoTrackErrorInfosImpl;
+    // typedef struct cvAutoTrackErrorInfos * error_infos_ptr;
+    // typedef struct cvAutoTrackErrorInfosImpl * error_infos_impl_ptr;
+// 
+    // struct cvAutoTrackFrameSource;
+    // struct cvAutoTrackFrameSourceImpl;
+    // typedef struct cvAutoTrackFrameSource * frame_source_ptr;
+    // typedef struct cvAutoTrackFrameSourceImpl * frame_source_impl_ptr;
+// 
+    // struct cvAutoTrackLocalSource;
+    // struct cvAutoTrackLocalSourceImpl;
+    // typedef struct cvAutoTrackLocalSource * local_source_ptr;
+    // typedef struct cvAutoTrackLocalSourceImpl * local_source_impl_ptr;
+// 
+    // struct cvAutoTrackCaptureSource;
+    // struct cvAutoTrackCaptureSourceImpl;
+    // typedef struct cvAutoTrackCaptureSource * capture_source_ptr;
+    // typedef struct cvAutoTrackCaptureSourceImpl * capture_source_impl_ptr;
+// 
+    // struct cvAutoTrackFrameFactory;
+    // struct cvAutoTrackFrameFactoryImpl;
+    // typedef struct cvAutoTrackFrameFactory * frame_factory_ptr;
+    // typedef struct cvAutoTrackFrameFactoryImpl * frame_factory_impl_ptr;
+// 
+    // struct cvAutoTrackContext;
+    // struct cvAutoTrackContextImpl;
+    // typedef struct cvAutoTrackContext * context_ptr;
+    // typedef struct cvAutoTrackContextImpl * context_impl_ptr;
+// 
+    // struct cvAutoTrackCore;
+    // struct cvAutoTrackCoreImpl;
+    // typedef struct cvAutoTrackCore * core_ptr;
+    // typedef struct cvAutoTrackCoreImpl * core_impl_ptr;
 
     struct cvAutoTrackString
     {
@@ -83,6 +110,30 @@ extern "C"
         error_code_t (*get_info_count)(int* count);
     };
 
+    enum window_handle_source_type
+    {
+        official,
+        cloud_official,
+        // cloud_tencent,
+        // cloud_netease,
+        // unity_debug,
+    };
+    struct cvAutoTrackWindowHandleSource
+    {
+        window_handle_source_impl_ptr impl;
+        void (*destroy)(window_handle_source_ptr source);
+
+        error_code_t (*get_handle)(window_handle_source_ptr source, int* handle);
+    };
+    
+    struct cvAutoTrackWindowHandleFactory
+    {
+        window_handle_factory_impl_ptr impl;
+        void (*destroy)(window_handle_factory_ptr factory);
+
+        window_handle_source_ptr (*create_window_handle_source)(window_handle_factory_ptr factory, enum window_handle_source_type source_type);
+    };
+
     struct cvAutoTrackFrameSource
     {
         frame_source_impl_ptr impl;
@@ -97,7 +148,7 @@ extern "C"
     enum local_source_type
     {
         video,
-        picture
+        picture,
     };
     
     struct cvAutoTrackLoaclSource
@@ -121,7 +172,7 @@ extern "C"
         void (*destroy)(capture_source_ptr capture_source);
         frame_source_ptr (*cast)(capture_source_ptr capture_source);
 
-        error_code_t (*set_capture_handle)(capture_source_ptr capture_source, void* handle);
+        error_code_t (*set_capture_handle)(capture_source_ptr capture_source, int handle);
     };
 
     struct cvAutoTrackFrameFactory
@@ -151,6 +202,7 @@ extern "C"
 
         error_infos_ptr (*create_error_infos)();
         context_ptr (*create_context)();
+        window_handle_factory_ptr (*create_window_handle_factory)();
         frame_factory_ptr (*create_frame_factory)();
 
         error_code_t (*get_version)(string_ptr* version);
