@@ -160,7 +160,7 @@ namespace tianli::frame::capture::utils::window_graphics
         return client_box_available;
     }
 
-    inline void set_capture_session_property(winrt::Windows::Graphics::Capture::GraphicsCaptureSession& session, bool is_border = false, bool is_cursor = false)
+    inline void set_capture_session_property(winrt::Windows::Graphics::Capture::GraphicsCaptureSession& session, bool is_border = false, bool is_cursor = false, bool is_async = true)
     {
         // 判断 WindowsSDK 版本大于等于 10.0.22000.0
 #if (WINVER >= _WIN32_WINNT_WIN10_21H2)
@@ -168,10 +168,20 @@ namespace tianli::frame::capture::utils::window_graphics
         {
             if (winrt::Windows::Foundation::Metadata::ApiInformation::IsPropertyPresent(L"Windows.Graphics.Capture.GraphicsCaptureSession", L"IsBorderRequired"))
             {
-
-                winrt::Windows::Graphics::Capture::GraphicsCaptureAccess::RequestAccessAsync(winrt::Windows::Graphics::Capture::GraphicsCaptureAccessKind::Borderless).get();
-                session.IsBorderRequired(is_border);
-                session.IsCursorCaptureEnabled(is_cursor);
+                auto request_access = winrt::Windows::Graphics::Capture::GraphicsCaptureAccess::RequestAccessAsync(winrt::Windows::Graphics::Capture::GraphicsCaptureAccessKind::Borderless);
+                if (is_async)
+                {
+                    request_access.Completed([session, is_border, is_cursor](auto&&, auto&&) {
+                        session.IsBorderRequired(is_border);
+                        session.IsCursorCaptureEnabled(is_cursor);
+                    });
+                }
+                else
+                {
+                    auto access = request_access.get();
+                    session.IsBorderRequired(is_border);
+                    session.IsCursorCaptureEnabled(is_cursor);
+                }
             }
         }
         catch (...)
