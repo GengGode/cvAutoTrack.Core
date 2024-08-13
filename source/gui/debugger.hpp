@@ -144,9 +144,6 @@ struct task {
 
 struct capture_task :task {
     capture_task(variable_pool& vars, std::condition_variable& cv, condition_variable_group& cvs) : task(vars, cv, cvs) {}
-    void init() override{
-        vars.source->set_capture_handle(GetDesktopWindow());
-    }
     void cycle() override
     {
         std::unique_lock<std::mutex> lock(mutex);
