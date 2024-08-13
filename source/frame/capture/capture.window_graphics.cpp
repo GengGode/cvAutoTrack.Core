@@ -82,7 +82,7 @@ namespace tianli::frame::capture
             return false;
         if (this->source_frame.cols < 480 || this->source_frame.rows < 360)
             return false;
-        frame = this->source_frame;
+        frame = this->source_frame.clone();
         return true;
 }
 }
