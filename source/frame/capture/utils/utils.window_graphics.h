@@ -60,7 +60,14 @@ namespace tianli::frame::capture::utils::window_graphics
     {
         auto interop_factory = winrt::get_activation_factory<winrt::Windows::Graphics::Capture::GraphicsCaptureItem, IGraphicsCaptureItemInterop>();
         winrt::Windows::Graphics::Capture::GraphicsCaptureItem item = { nullptr };
-        winrt::check_hresult(interop_factory->CreateForWindow(hwnd, winrt::guid_of<ABI::Windows::Graphics::Capture::IGraphicsCaptureItem>(), winrt::put_abi(item)));
+        try{
+            winrt::check_hresult(interop_factory->CreateForWindow(hwnd, winrt::guid_of<ABI::Windows::Graphics::Capture::IGraphicsCaptureItem>(), winrt::put_abi(item)));
+        }
+        catch(winrt::hresult_error const& e)
+        {
+            if (e.code() == HRESULT_FROM_WIN32(E_INVALIDARG))
+                winrt::check_hresult(interop_factory->CreateForMonitor(MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), winrt::guid_of<ABI::Windows::Graphics::Capture::IGraphicsCaptureItem>(), winrt::put_abi(item)));
+        }
         return item;
     }
 
