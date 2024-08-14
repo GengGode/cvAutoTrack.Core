@@ -111,6 +111,7 @@ void imapp::frame_loop()
     {
         {
             MSG msg{};
+            //if (MsgWaitForMultipleObjects(0, NULL, FALSE, 10, QS_ALLINPUT) == WAIT_OBJECT_0)
             while (::PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE))
             {
                 ::TranslateMessage(&msg);
@@ -177,6 +178,8 @@ bool imapp::initialization()
 
 bool imapp::uninitialized()
 {
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    this->destory(io);
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
@@ -237,10 +240,10 @@ inline LONG WINAPI ExceptionFilter(LPEXCEPTION_POINTERS lpExceptionInfo)
 bool imapp::execute()
 {
     SetUnhandledExceptionFilter(ExceptionFilter);
-    if (!this->initialization())
-        return false;
-    this->frame_loop();
     try {
+        if (!this->initialization())
+            return false;
+        this->frame_loop();
         return this->uninitialized();
     }
     catch (...)
