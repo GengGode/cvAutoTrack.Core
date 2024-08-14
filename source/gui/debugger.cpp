@@ -1,5 +1,4 @@
 #include "debugger.hpp"
-#include <global.genshin.h>
 
 #include <opencv2/imgproc.hpp>
 
@@ -53,15 +52,6 @@ void debugger::init(ImGuiIO& io) {
             return bind_texture(mat, texture_id, mat.channels()!=4);
         return rebind_texture(mat, texture_id, mat.channels()!=4);
     };
-
-    genshin = tianli::genshin::create_genshin_handle(tianli::genshin::genshin_handle::hanlde_type::official);
-    HWND handle{};
-    if(genshin->get_handle(handle)==false)
-    {
-        std::cout << "Can't find genshin window" << std::endl;
-        return; 
-    }
-    ctx->variables->source->set_capture_handle(handle);
 }
 void debugger::next_frame(ImGuiIO& io){
     inspect_pool.bind_texture();
@@ -70,6 +60,27 @@ void debugger::next_frame(ImGuiIO& io){
 
     ImGui::Begin("Debugger");
     ImGui::Text("耗时：%.3f ms 帧率： (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+    if (ImGui::Button("wgc截图"))
+    {
+        if (ctx->variables->source)
+            ctx->variables->source->uninitialized();
+        ctx->variables->source = tianli::frame::create_capture_source(tianli::frame::capture_source::source_type::window_graphics);
+        HWND handle{};
+        if (ctx->variables->genshin->get_handle(handle))
+            ctx->variables->source->set_capture_handle(handle);
+    }
+    if(ImGui::Button("bitblt截图"))
+    {
+        if (ctx->variables->source)
+            ctx->variables->source->uninitialized();
+        ctx->variables->source = tianli::frame::create_capture_source(tianli::frame::capture_source::source_type::bitblt);
+        ctx->variables->source->set_source_handle_callback([this]()->HWND{
+            HWND handle{};
+            if (ctx->variables->genshin->get_handle(handle))
+                return handle;
+            return nullptr;
+        });
+    }
     ImGui::End();
     static auto begin = std::chrono::system_clock::now();
 
@@ -135,4 +146,17 @@ void debugger::next_frame(ImGuiIO& io){
 
     is_need_new_frame =true;
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
+}
+
+void debugger::destory(ImGuiIO& io){
+
+    if(ctx->variables->source)
+        ctx->variables->source->uninitialized();
+    ctx->variables->source = tianli::frame::create_capture_source(tianli::frame::capture_source::source_type::bitblt);
+    if (ctx->variables->source)
+        ctx->variables->source->uninitialized();
+    ctx->variables->source = nullptr;
+    ctx = nullptr;
+    ImPlot::DestroyContext(plot_ctx);
+    ctx.reset();
 }

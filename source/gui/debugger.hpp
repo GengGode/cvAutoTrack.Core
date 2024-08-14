@@ -17,16 +17,11 @@ public:
 public:
     void init(ImGuiIO& io) override;
     void next_frame(ImGuiIO& io) override;
-    void destory(ImGuiIO& io) override
-    {
-        ImPlot::DestroyContext(plot_ctx);
-        ctx.reset();
-    }
+    void destory(ImGuiIO& io) override;
 public:
     ImPlotContext* plot_ctx =nullptr;
     image_inspect_pool inspect_pool;
     std::shared_ptr<tracker_context> ctx;
-    std::shared_ptr<tianli::genshin::genshin_handle> genshin;
 };
 
 #include <chrono>
@@ -38,6 +33,7 @@ public:
 #include <iostream>
 #include <format>
 #include <frame.include.h>
+#include <global.genshin.h>
 
 struct time_frame{
     std::chrono::microseconds frame_time;
@@ -74,7 +70,9 @@ struct variable_pool {
     size_t capture_frame_count = 0;
     std::list<std::chrono::system_clock::time_point> capture_times;
 
-    std::shared_ptr<tianli::frame::capture_source> source = tianli::frame::create_capture_source(tianli::frame::frame_source::source_type::window_graphics);
+    std::shared_ptr<tianli::frame::capture_source> source;//= tianli::frame::create_capture_source(tianli::frame::frame_source::source_type::window_graphics);
+
+    std::shared_ptr<tianli::genshin::genshin_handle> genshin = tianli::genshin::create_genshin_handle(tianli::genshin::genshin_handle::hanlde_type::official);
 
     time_frame current_frame;
     cv::Mat frame;
@@ -155,7 +153,7 @@ struct capture_task :task {
             return;
 
         vars.lines.add_point("采集", std::chrono::system_clock::now());
-        if (vars.source->get_frame(vars.frame))
+        if (vars.source && vars.source->get_frame(vars.frame))
         {
            // std::cout << std::format("capture frame {}\n", vars.capture_frame_count);
         }
