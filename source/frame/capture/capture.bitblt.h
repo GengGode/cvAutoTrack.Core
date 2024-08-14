@@ -65,6 +65,9 @@ namespace tianli::frame::capture
         }
         bool get_frame(cv::Mat& frame) override
         {
+            if (is_initialized == false)
+                return false;
+
             if (source_frame.cols != client_size.width || source_frame.rows != client_size.height)
                 source_frame.create(client_size, CV_MAKETYPE(CV_8U, 4));
 
