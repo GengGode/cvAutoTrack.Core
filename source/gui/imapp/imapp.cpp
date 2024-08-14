@@ -120,13 +120,13 @@ void imapp::frame_loop()
                     this->is_done = true;
                 }
             }
+            if (this->is_done)
+                break;
             if (msg.message == WM_NULL && this->is_need_new_frame == false)
             {
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 continue;
             }
-            if (this->is_done)
-                break;
             this->is_need_new_frame = false;
         }
 
