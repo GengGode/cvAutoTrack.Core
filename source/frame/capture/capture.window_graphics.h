@@ -7,14 +7,66 @@ namespace tianli::frame::capture
 {
     class capture_window_graphics : public capture_source
     {
-        winrt::com_ptr<IInspectable> m_device{ nullptr };
-        winrt::com_ptr<ID3D11DeviceContext> m_d3dContext{ nullptr };
-        winrt::Windows::Graphics::Capture::GraphicsCaptureItem m_item{ nullptr };
-        winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool m_framePool{ nullptr };
-        winrt::Windows::Graphics::Capture::GraphicsCaptureSession m_session{ nullptr };
-        winrt::Windows::Graphics::SizeInt32 m_lastSize{ };
-        winrt::com_ptr<IDXGISwapChain1> m_swapChain{ nullptr };
-        bool                            is_async = true;
+        const bool                                                            is_async = false;
+
+        winrt::Windows::Graphics::Capture::GraphicsCaptureItem                                  item{ nullptr };
+        winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice                          device{ nullptr };
+        winrt::com_ptr<ID3D11DeviceContext>                                                     context;
+        winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool                           frame_pool{ nullptr };
+        winrt::Windows::Graphics::Capture::GraphicsCaptureSession                               session{ nullptr };
+        winrt::Windows::Graphics::SizeInt32                                                     last_size{};
+        winrt::Windows::Graphics::Capture::GraphicsCaptureItem::Closed_revoker                  closed;
+        winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool::FrameArrived_revoker     frame_arrived;
+        ID3D11Texture2D*                                                                        texture{ nullptr };
+        ID3D11Texture2D*                                                                        texture_swap{ nullptr };
+        std::atomic<bool>                                                                       texture_using{ };
+        std::atomic<bool>                                                                       texture_writting{ };
+        DXGI_FORMAT                                                                             format{};
+        uint32_t                                                                                texture_width{};
+        uint32_t                                                                                texture_height{};
+        D3D11_BOX                                                                               client_box{};
+
+        void on_closed(winrt::Windows::Graphics::Capture::GraphicsCaptureItem const&,
+            winrt::Windows::Foundation::IInspectable const&)
+        {
+            is_initialized = false;
+        }
+        void on_frame_arrived(winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool const&,
+            winrt::Windows::Foundation::IInspectable const&)
+        {
+            auto frame = frame_pool.TryGetNextFrame();
+            if (frame == nullptr)
+                return;
+            auto frame_size = frame.ContentSize();
+            if (frame_size != last_size)
+            {
+                frame_pool.Recreate(device, winrt::Windows::Graphics::DirectX::DirectXPixelFormat::B8G8R8A8UIntNormalized, 2, frame_size);
+                last_size = frame_size;
+            }
+            auto frame_surface = utils::window_graphics::GetDXGIInterfaceFromObject<ID3D11Texture2D>(frame.Surface());
+
+            D3D11_TEXTURE2D_DESC desc;
+            frame_surface->GetDesc(&desc);
+            desc.Usage = D3D11_USAGE_STAGING;
+            desc.BindFlags = 0;
+            desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+            desc.MiscFlags = 0;
+
+            auto& current_texture = texture_using == true ? texture_swap : texture;
+
+            texture_using = true;
+            if (current_texture == nullptr)
+                utils::window_graphics::graphics_global::get_instance().d3d_device->CreateTexture2D(&desc, nullptr, &current_texture);
+            bool client_box_available = utils::window_graphics::get_client_box(source_handle, desc.Width, desc.Height, &client_box);
+            if (client_box_available)
+                context->CopySubresourceRegion(current_texture, 0, 0, 0, 0, frame_surface.get(), 0, &client_box);
+            else
+                context->CopyResource(current_texture, frame_surface.get());
+            texture_using = false;
+        }
+        void async_copy_texture(cv::Mat& frame)
+        {
+        }
     public:
         capture_window_graphics()
         {
@@ -34,36 +86,37 @@ namespace tianli::frame::capture
             if (IsWindow(this->source_handle) == false)
                 return false;
 
-            m_device = utils::window_graphics::CreateDirect3DDevice(utils::window_graphics::graphics_global::get_instance().dxgi_device.get());
-            m_item = utils::window_graphics::CreateCaptureItemForWindow(this->source_handle);
+            item = utils::window_graphics::CreateCaptureItemForWindow(this->source_handle);
 
-            if (m_item == nullptr)
+            if (item == nullptr)
                 return false;
 
-            m_lastSize = m_item.Size();
-            m_swapChain = utils::window_graphics::CreateDXGISwapChain(utils::window_graphics::graphics_global::get_instance().d3d_device, static_cast<uint32_t>(m_lastSize.Width),
-                                                                      static_cast<uint32_t>(m_lastSize.Height), DXGI_FORMAT_B8G8R8A8_UNORM, 2);
+            last_size = item.Size();
 
-            utils::window_graphics::graphics_global::get_instance().d3d_device->GetImmediateContext(m_d3dContext.put());
+            device = utils::window_graphics::CreateDirect3DDevice(utils::window_graphics::graphics_global::get_instance().dxgi_device.get());
+            utils::window_graphics::graphics_global::get_instance().d3d_device->GetImmediateContext(context.put());
 
-            auto dx3d_device = m_device.as<winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice>();
             if(is_async == false)
             {            
-                m_framePool = winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool::Create(dx3d_device, static_cast<winrt::Windows::Graphics::DirectX::DirectXPixelFormat>(87), 2, m_lastSize);
-                m_session = m_framePool.CreateCaptureSession(m_item);
-                utils::window_graphics::set_capture_session_property(m_session);
-                m_session.StartCapture();
+                frame_pool = winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool::Create(device, static_cast<winrt::Windows::Graphics::DirectX::DirectXPixelFormat>(87), 2, last_size);
+                session = frame_pool.CreateCaptureSession(item);
+                utils::window_graphics::set_capture_session_property(session);
+                session.StartCapture();
             }
             else
             {
-                m_framePool = winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool::CreateFreeThreaded(dx3d_device, static_cast<winrt::Windows::Graphics::DirectX::DirectXPixelFormat>(87), 2, m_lastSize);
+                frame_pool = winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool::CreateFreeThreaded(device, static_cast<winrt::Windows::Graphics::DirectX::DirectXPixelFormat>(87), 2, last_size);
                 std::thread async_create = std::thread([this]() {
-                    m_session = m_framePool.CreateCaptureSession(m_item);
-                    utils::window_graphics::set_capture_session_property(m_session);
-                    m_session.StartCapture();
+                    session = frame_pool.CreateCaptureSession(item);
+                    utils::window_graphics::set_capture_session_property(session);
+                    session.StartCapture();
 	            });
                 async_create.detach();
             }
+
+            closed = item.Closed(winrt::auto_revoke, { this, &capture_window_graphics::on_closed });
+            frame_arrived = frame_pool.FrameArrived(winrt::auto_revoke, { this,&capture_window_graphics::on_frame_arrived });
+
             this->is_initialized = true;
             return true;
         }
@@ -72,17 +125,17 @@ namespace tianli::frame::capture
         {
             if (this->is_initialized == false)
                 return true;
-
-            if (m_session != nullptr)
-                m_session.Close();
-            if (m_framePool != nullptr)
-                m_framePool.Close();
-            m_session = nullptr;
-            m_framePool = nullptr;
-            m_swapChain = nullptr;
-            m_item = nullptr;
-
             this->is_initialized = false;
+
+            frame_arrived.revoke();
+            closed.revoke();
+
+            if (frame_pool != nullptr)
+                frame_pool.Close();
+            if (session != nullptr)
+                session.Close();
+            frame_pool = nullptr;
+            session = nullptr;
             return true;
         }
 

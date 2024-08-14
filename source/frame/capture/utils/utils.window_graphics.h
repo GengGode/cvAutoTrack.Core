@@ -22,7 +22,7 @@ namespace tianli::frame::capture::utils::window_graphics
     {
         winrt::com_ptr<::IInspectable> d3d_device;
         winrt::check_hresult(CreateDirect3D11DeviceFromDXGIDevice(dxgi_device, d3d_device.put()));
-        return d3d_device;
+        return d3d_device.as<winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice>();
     }
 
     inline auto CreateDXGISwapChain(winrt::com_ptr<ID3D11Device> const& device, const DXGI_SWAP_CHAIN_DESC1* desc)
