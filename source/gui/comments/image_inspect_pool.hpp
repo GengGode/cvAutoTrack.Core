@@ -206,7 +206,7 @@ public:
     void async_update(std::string key, cv::Mat& mat)
 	{
         std::jthread async = std::jthread([this, key, mat]() {
-            sync_update(key, mat);
+            sync_update(key, mat.clone());
         });
         async.detach();
 	}
