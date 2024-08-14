@@ -55,6 +55,14 @@ namespace tianli::frame::capture
             auto& current_texture = texture_using == true ? texture_swap : texture;
 
             texture_using = true;
+            if(current_texture)
+            {    
+                if (desc.Width != texture_width || desc.Height != texture_height || desc.Format != format)
+                {
+                    current_texture->Release();
+                    current_texture = nullptr;
+                }
+            }
             if (current_texture == nullptr)
                 utils::window_graphics::graphics_global::get_instance().d3d_device->CreateTexture2D(&desc, nullptr, &current_texture);
             bool client_box_available = utils::window_graphics::get_client_box(source_handle, desc.Width, desc.Height, &client_box);
@@ -63,9 +71,6 @@ namespace tianli::frame::capture
             else
                 context->CopyResource(current_texture, frame_surface.get());
             texture_using = false;
-        }
-        void async_copy_texture(cv::Mat& frame)
-        {
         }
     public:
         capture_window_graphics()
@@ -134,8 +139,11 @@ namespace tianli::frame::capture
                 frame_pool.Close();
             if (session != nullptr)
                 session.Close();
-            frame_pool = nullptr;
             session = nullptr;
+            frame_pool = nullptr;
+            context = nullptr;
+            device = nullptr;
+            item = nullptr;
             return true;
         }
 
