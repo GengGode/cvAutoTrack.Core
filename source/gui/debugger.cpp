@@ -2,6 +2,8 @@
 
 #include <opencv2/imgproc.hpp>
 
+static int gl_texture_color_format = GL_RGBA;
+
 static auto bind_texture=[](cv::Mat& mat, ImTextureID& texture_id, bool need_to_rgba)
 {
     if (mat.empty())
@@ -17,7 +19,7 @@ static auto bind_texture=[](cv::Mat& mat, ImTextureID& texture_id, bool need_to_
     glBindTexture(GL_TEXTURE_2D, texture_cast(texture_id));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_BGRA_EXT, mat.cols, mat.rows, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, mat.data);
+    glTexImage2D(GL_TEXTURE_2D, 0, gl_texture_color_format, mat.cols, mat.rows, 0, gl_texture_color_format, GL_UNSIGNED_BYTE, mat.data);
 };
 static auto rebind_texture=[](cv::Mat& mat, ImTextureID& texture_id, bool need_to_rgba)
 {
@@ -26,7 +28,7 @@ static auto rebind_texture=[](cv::Mat& mat, ImTextureID& texture_id, bool need_t
     if (need_to_rgba)
         cv::cvtColor(mat, mat, cv::COLOR_BGRA2RGBA);
     glBindTexture(GL_TEXTURE_2D, texture_cast(texture_id));
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_BGRA_EXT, mat.cols, mat.rows, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, mat.data);
+    glTexImage2D(GL_TEXTURE_2D, 0, gl_texture_color_format, mat.cols, mat.rows, 0, gl_texture_color_format, GL_UNSIGNED_BYTE, mat.data);
 };
     
 
@@ -60,6 +62,15 @@ void debugger::next_frame(ImGuiIO& io){
 
     ImGui::Begin("Debugger");
     ImGui::Text("耗时：%.3f ms 帧率： (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+    if(ImGui::Button("RGBA"))
+    {
+        gl_texture_color_format = GL_RGBA;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("BGRA"))
+    {
+        gl_texture_color_format = GL_BGRA_EXT;
+    }
     if (ImGui::Button("wgc截图"))
     {
         if (ctx->variables->source)
@@ -69,6 +80,7 @@ void debugger::next_frame(ImGuiIO& io){
         if (ctx->variables->genshin->get_handle(handle))
             ctx->variables->source->set_capture_handle(handle);
     }
+    ImGui::SameLine();
     if(ImGui::Button("bitblt截图"))
     {
         if (ctx->variables->source)
