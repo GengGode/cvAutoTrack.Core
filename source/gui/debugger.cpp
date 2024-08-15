@@ -185,3 +185,11 @@ void debugger::destory(ImGuiIO& io){
     ImPlot::DestroyContext(plot_ctx);
     ctx.reset();
 }
+
+void debugger::destory_window()
+{
+    if (ctx->variables->source)
+        ctx->variables->source->uninitialized();
+    ctx->variables->source = tianli::frame::create_capture_source(tianli::frame::capture_source::source_type::bitblt);
+    //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+}

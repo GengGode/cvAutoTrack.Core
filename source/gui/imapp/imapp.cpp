@@ -44,8 +44,13 @@ LRESULT WINAPI window_opengl::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
             return 0;
         break;
     case WM_DESTROY:
+    {
+         if (destory_window) 
+            destory_window();
         ::PostQuitMessage(0);
         return 0;
+        //return ::DefWindowProcW(hWnd, msg, wParam, lParam);
+    }
     }
     return ::DefWindowProcW(hWnd, msg, wParam, lParam);
 }
@@ -153,6 +158,9 @@ bool imapp::initialization()
     // Create application window
     ImGui_ImplWin32_EnableDpiAwareness();
     this->wgl.create_window();
+    this->wgl.destory_window = [this]() { 
+        this->is_done = true;
+        this->destory_window(); };
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();

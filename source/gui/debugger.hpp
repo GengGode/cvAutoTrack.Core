@@ -18,6 +18,7 @@ public:
     void init(ImGuiIO& io) override;
     void next_frame(ImGuiIO& io) override;
     void destory(ImGuiIO& io) override;
+    void destory_window() override;
 public:
     ImPlotContext* plot_ctx =nullptr;
     image_inspect_pool inspect_pool;

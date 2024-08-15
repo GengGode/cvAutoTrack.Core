@@ -4,6 +4,7 @@
 #include <mutex>
 #include <string>
 #include <filesystem>
+#include <functional>
 #include <execution>
 #include <random>
 
@@ -47,6 +48,7 @@ struct window_opengl {
 	bool CreateDeviceWGL(HWND hWnd);
 
 	static LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+    static inline std::function<void()> destory_window;
 
     HWND create_window();
     void shutdown_window();
@@ -101,7 +103,8 @@ public:
 public:
     virtual void init(ImGuiIO& io){}
     virtual void next_frame(ImGuiIO& io){}
-    virtual void destory(ImGuiIO& io){}
+    virtual void destory(ImGuiIO& io) {}
+    virtual void destory_window() = 0;
 
     void frame_loop();
     bool initialization() override;
