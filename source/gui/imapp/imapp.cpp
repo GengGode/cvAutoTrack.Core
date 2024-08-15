@@ -44,13 +44,12 @@ LRESULT WINAPI window_opengl::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
             return 0;
         break;
     case WM_DESTROY:
-    {
-         if (destory_window) 
-            destory_window();
         ::PostQuitMessage(0);
         return 0;
-        //return ::DefWindowProcW(hWnd, msg, wParam, lParam);
-    }
+    case WM_CLOSE:
+         if (destory_window) 
+            destory_window();
+        return 0;
     }
     return ::DefWindowProcW(hWnd, msg, wParam, lParam);
 }
