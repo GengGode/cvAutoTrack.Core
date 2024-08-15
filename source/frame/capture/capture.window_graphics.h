@@ -106,7 +106,6 @@ namespace tianli::frame::capture
                 frame_pool = winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool::Create(device, static_cast<winrt::Windows::Graphics::DirectX::DirectXPixelFormat>(87), 2, last_size);
                 session = frame_pool.CreateCaptureSession(item);
                 utils::window_graphics::set_capture_session_property(session);
-                session.StartCapture();
             }
             else
             {
@@ -114,14 +113,14 @@ namespace tianli::frame::capture
                 std::thread async_create = std::thread([this]() {
                     session = frame_pool.CreateCaptureSession(item);
                     utils::window_graphics::set_capture_session_property(session);
-                    session.StartCapture();
 	            });
                 async_create.detach();
             }
 
             closed = item.Closed(winrt::auto_revoke, { this, &capture_window_graphics::on_closed });
             frame_arrived = frame_pool.FrameArrived(winrt::auto_revoke, { this,&capture_window_graphics::on_frame_arrived });
-
+            
+            session.StartCapture();
             this->is_initialized = true;
             return true;
         }
