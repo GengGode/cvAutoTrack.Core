@@ -29,10 +29,13 @@ namespace tianli::frame::capture
             bitmap = CreateCompatibleBitmap(screen, client_size.width, client_size.height);
             SelectObject(compdc, bitmap);
 
+            is_initialized = true;
             return true;
         }
         bool uninitialized() override 
         {
+            is_initialized = false;
+
             DeleteObject(bitmap);
             DeleteDC(compdc);
             ReleaseDC(source_handle, screen);
@@ -68,6 +71,8 @@ namespace tianli::frame::capture
             if (is_initialized == false)
                 return false;
 
+            if(source_frame.empty())
+                source_frame.create(client_size, CV_MAKETYPE(CV_8U, 4));
             if (source_frame.cols != client_size.width || source_frame.rows != client_size.height)
                 source_frame.create(client_size, CV_MAKETYPE(CV_8U, 4));
 
