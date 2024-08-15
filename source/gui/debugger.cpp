@@ -82,16 +82,19 @@ void debugger::next_frame(ImGuiIO& io){
     }
     if (ImGui::Button("wgc截图"))
     {
+        ctx->pool->pause();
         if (ctx->variables->source)
             ctx->variables->source->uninitialized();
         ctx->variables->source = tianli::frame::create_capture_source(tianli::frame::capture_source::source_type::window_graphics);
         HWND handle{};
         if (ctx->variables->handle && ctx->variables->handle->get_handle(handle))
             ctx->variables->source->set_capture_handle(handle);
+        ctx->pool->resume();
     }
     ImGui::SameLine();
     if(ImGui::Button("bitblt截图"))
     {
+        ctx->pool->pause();
         if (ctx->variables->source)
             ctx->variables->source->uninitialized();
         ctx->variables->source = tianli::frame::create_capture_source(tianli::frame::capture_source::source_type::bitblt);
@@ -101,6 +104,7 @@ void debugger::next_frame(ImGuiIO& io){
                 return handle;
             return nullptr;
         });
+        ctx->pool->resume();
     }
     ImGui::End();
     static auto begin = std::chrono::system_clock::now();

@@ -97,10 +97,11 @@ struct condition_variable_group {
 };
 
 struct task {
+    std::atomic<bool> is_pause = false;
     std::mutex mutex;
     variable_pool& vars;
     std::condition_variable &cv;
-    condition_variable_group &cvs;
+    condition_variable_group& cvs;
     task(variable_pool& vars, std::condition_variable& cv, condition_variable_group& cvs) : vars(vars), cv(cv), cvs(cvs) {
         start();
     }
@@ -127,12 +128,24 @@ struct task {
 		}
 	}
     virtual void pause() {
-
+        is_pause.store(true);
+    }
+    virtual void resume() {
+        is_pause.store(false);
+        cv.notify_one();
     }
     void run() {
         stop_token = thread.get_stop_token();
         init();
         while (!stop_token.stop_requested()) {
+            if (is_pause.load())
+            {
+                std::unique_lock<std::mutex> lock(mutex);
+                cv.wait(lock, [this]() {return !is_pause.load(); });
+            }
+            if (stop_token.stop_requested())
+                return;
+
             cycle();
         }
     }
@@ -275,7 +288,20 @@ struct task_pool {
 
     void start(){}
     void stop(){}
-    void pause(){}
+    void pause(){
+        ts.capture->pause();
+        ts.pre_process->pause();
+        ts.partial_match->pause();
+        ts.overall_match->pause();
+        ts.data_fusion->pause();
+    }
+    void resume(){
+        ts.capture->resume();
+        ts.pre_process->resume();
+        ts.partial_match->resume();
+        ts.overall_match->resume();
+        ts.data_fusion->resume();
+    }
 };
 
 
