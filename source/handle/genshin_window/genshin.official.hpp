@@ -1,29 +1,29 @@
-#include "../global.genshin.h"
+#include "../handle.include.h"
 #include <array>
 #include <string>
 
-namespace tianli::genshin
+namespace tianli::handle
 {
-    class genshin_official : public genshin_handle
+    class genshin_official : public handle_source
     {
     public:
-        genshin_official() { type = hanlde_type::official; }
+        genshin_official() { type = hanlde_type::genshin_official; }
     public:
-        bool get_handle(HWND& handle) override
+        std::optional<HWND> get_handle() override
         {
             for(const auto& name : genshin_names)
             {
-                handle = FindWindowW(L"UnityWndClass", name.c_str());
+                auto handle = FindWindowW(L"UnityWndClass", name.c_str());
                 if(handle != nullptr)
-                    return true;
+                    return handle;
             }
             for(const auto& name : genshin_names_utf8)
             {
-                handle = FindWindowA("UnityWndClass", name.c_str());
+                auto handle = FindWindowA("UnityWndClass", name.c_str());
                 if(handle != nullptr)
-                    return true;
+                    return handle;
             }
-            return false;
+            return std::nullopt;
         }
     private:
         const static inline std::array<std::wstring, 3> genshin_names={

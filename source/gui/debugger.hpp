@@ -34,7 +34,7 @@ public:
 #include <iostream>
 #include <format>
 #include <frame.include.h>
-#include <global.genshin.h>
+#include <handle.include.h>
 
 struct time_frame{
     std::chrono::microseconds frame_time;
@@ -73,7 +73,7 @@ struct variable_pool {
 
     std::shared_ptr<tianli::frame::capture_source> source;//= tianli::frame::create_capture_source(tianli::frame::frame_source::source_type::window_graphics);
 
-    std::shared_ptr<tianli::genshin::genshin_handle> handle;// = tianli::genshin::create_genshin_handle(tianli::genshin::genshin_handle::hanlde_type::unknown);
+    std::shared_ptr<tianli::handle::handle_source> handle;// = tianli::genshin::create_genshin_handle(tianli::genshin::genshin_handle::hanlde_type::unknown);
 
     time_frame current_frame;
     cv::Mat frame;

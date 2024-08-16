@@ -39,7 +39,7 @@ target_sources(${library_target_name}
         )
 
 target_link_libraries(${library_target_name} PUBLIC tianli::frame)
-target_link_libraries(${library_target_name} PUBLIC tianli::genshin)
+target_link_libraries(${library_target_name} PUBLIC tianli::handle)
 target_link_libraries(${library_target_name}
     PUBLIC
         # ${OpenCV_LIBS}

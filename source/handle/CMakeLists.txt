@@ -1,6 +1,6 @@
-add_library(tianli_genshin STATIC)
-add_library(tianli::genshin ALIAS tianli_genshin)
-set(library_target_name tianli_genshin)
+add_library(tianli_handle STATIC)
+add_library(tianli::handle ALIAS tianli_handle)
+set(library_target_name tianli_handle)
 
 project_set_options(${library_target_name})
 set_target_properties(${library_target_name} PROPERTIES FOLDER "core/modules")
@@ -9,7 +9,7 @@ target_include_directories(${library_target_name} PUBLIC ${CMAKE_CURRENT_SOURCE_
 
 target_sources(${library_target_name}
     PUBLIC
-        global.genshin.h
+        handle.include.h
     PRIVATE
-        genshin.cpp
+        handle.cpp
         )

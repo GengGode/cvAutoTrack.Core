@@ -8,7 +8,7 @@ macro (project_set_options library_target_name)
     target_compile_options(${library_target_name} PRIVATE /MP)
 endmacro()
 
-add_subdirectory(genshin)
+add_subdirectory(handle)
 # add_subdirectory(global)
 add_subdirectory(logger)
 add_subdirectory(frame)

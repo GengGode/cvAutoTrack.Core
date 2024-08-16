@@ -73,12 +73,12 @@ void debugger::next_frame(ImGuiIO& io){
     }
     if (ImGui::Button("采集桌面"))
     {
-        ctx->variables->handle = tianli::genshin::create_genshin_handle(tianli::genshin::genshin_handle::hanlde_type::unknown);
+        ctx->variables->handle = tianli::handle::create_handle_source(tianli::handle::handle_source::hanlde_type::foreground);
     }
     ImGui::SameLine();
     if (ImGui::Button("采集原神"))
     {
-        ctx->variables->handle = tianli::genshin::create_genshin_handle(tianli::genshin::genshin_handle::hanlde_type::official);
+        ctx->variables->handle = tianli::handle::create_handle_source(tianli::handle::handle_source::hanlde_type::genshin_official);
     }
     if (ImGui::Button("wgc截图"))
     {
@@ -86,9 +86,9 @@ void debugger::next_frame(ImGuiIO& io){
         if (ctx->variables->source)
             ctx->variables->source->uninitialized();
         ctx->variables->source = tianli::frame::create_capture_source(tianli::frame::capture_source::source_type::window_graphics);
-        HWND handle{};
-        if (ctx->variables->handle && ctx->variables->handle->get_handle(handle))
-            ctx->variables->source->set_capture_handle(handle);
+        if (ctx->variables->handle)
+            if (auto handle_opt = ctx->variables->handle->get_handle(); handle_opt)
+                ctx->variables->source->set_capture_handle(handle_opt.value());
         ctx->pool->resume();
     }
     ImGui::SameLine();
@@ -99,9 +99,9 @@ void debugger::next_frame(ImGuiIO& io){
             ctx->variables->source->uninitialized();
         ctx->variables->source = tianli::frame::create_capture_source(tianli::frame::capture_source::source_type::bitblt);
         ctx->variables->source->set_source_handle_callback([this]()->HWND{
-            HWND handle{};
-            if (ctx->variables->handle && ctx->variables->handle->get_handle(handle))
-                return handle;
+            if (ctx->variables->handle)
+                if (auto handle_opt =ctx->variables->handle->get_handle(); handle_opt)
+                    return handle_opt.value();
             return nullptr;
         });
         ctx->pool->resume();
