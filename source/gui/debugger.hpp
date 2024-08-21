@@ -65,6 +65,7 @@ struct time_lines
 };
 
 struct variable_pool {
+    int interval_ms = 33;
     std::chrono::microseconds capture_interval = std::chrono::milliseconds(33);// / 1000;
     std::chrono::system_clock::time_point current_time = std::chrono::system_clock::now();
     std::chrono::system_clock::time_point capture_until = current_time + capture_interval;

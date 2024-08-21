@@ -71,6 +71,12 @@ void debugger::next_frame(ImGuiIO& io){
     {
         gl_texture_color_format = GL_BGRA_EXT;
     }
+    ImGui::InputInt("截图间隔ms", &ctx->variables->interval_ms);
+    ImGui::SameLine();
+    if(ImGui::Button("重设截图间隔"))
+    {
+        ctx->variables->capture_interval = std::chrono::milliseconds(ctx->variables->interval_ms);
+    }
     if (ImGui::Button("采集桌面"))
     {
         ctx->variables->handle = tianli::handle::create_handle_source(tianli::handle::handle_source::hanlde_type::foreground);
@@ -104,6 +110,15 @@ void debugger::next_frame(ImGuiIO& io){
                     return handle_opt.value();
             return nullptr;
         });
+        ctx->pool->resume();
+    }
+    ImGui::SameLine();
+    if(ImGui::Button("停止截图"))
+    {
+        ctx->pool->pause();
+        if (ctx->variables->source)
+            ctx->variables->source->uninitialized();
+        ctx->variables->source = nullptr;
         ctx->pool->resume();
     }
     ImGui::End();
